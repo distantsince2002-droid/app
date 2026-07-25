@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>Tap Flyer</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      touch-action: none;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+
+    body {
+      background: #0f172a;
+      overflow: hidden;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-family: system-ui, -apple-system, sans-serif;
+    }
+
+    canvas {
+      display: block;
+      background: linear-gradient(#87CEEB, #E0F7FA);
+      max-width: 100vw;
+      max-height: 100vh;
+    }
+
+    #ui {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      color: white;
+      text-shadow: 0 2px 8px rgba(0,0,0,0.5);
+    }
+
+    #score {
+      position: absolute;
+      top: 40px;
+      font-size: 48px;
+      font-weight: bold;
+    }
+
+    #message {
+      font-size: 28px;
+      font-weight: 600;
+      text-align: center;
+      padding: 0 20px;
+      line-height: 1.4;
+    }
+
+    #highScore {
+      margin-top: 12px;
+      font-size: 18px;
+      opacity: 0.9;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="gameCanvas"></canvas>
+
+  <div id="ui">
+    <div id="score">0</div>
+    <div id="message">Tap to Start</div>
+    <div id="highScore"></div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const scoreEl = document.getElementById('score');
+    const messageEl = document.getElementById('message');
+    const highScoreEl = document.getElementById('highScore');
+
+    // Resize canvas to fit screen
+    function resize() {
+      canvas.width = Math.min(window.innerWidth, 500);
+      canvas.height = window.innerHeight;
+    }
+    resize();
+    window.addEventListener('resize', resize);
+
+    // Game variables
+    let bird = { x: 80, y: 0, velocity: 0, radius: 18 };
+    let pipes = [];
+    let score = 0;
+    let highScore = localStorage.getItem('tapFlyerHigh') || 0;
+    let gameState = 'start'; // start | playing | over
+    let frame = 0;
+    const gravity = 0.45;
+    const jump = -8.5;
+    const pipeWidth = 70;
+    const pipeGap = 160;
+    const pipeSpeed = 3.2;
+
+    highScoreEl.textContent = highScore > 0 ? `Best: ${highScore}` : '';
+
+    // Create a new pipe pair
+    function createPipe() {
+      const topHeight = Math.random() * (canvas.height - pipeGap - 150) + 60;
+      pipes.push({
+        x: canvas.width,
+        top: topHeight,
+        bottom: topHeight + pipeGap,
+        passed: false
+      });
+    }
+
+    // Reset game
+    function reset() {
+      bird.y = canvas.height / 2;
+      bird.velocity = 0;
+      pipes = [];
+      score = 0;
+      frame = 0;
+      scoreEl.textContent = '0';
+      gameState = 'playing';
+      messageEl.textContent = '';
+      createPipe();
+    }
+
+    // Draw everything
+    function draw() {
+      // Clear
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Draw pipes
+      ctx.fillStyle = '#22c55e';
+      pipes.forEach(pipe => {
+        // Top pipe
+        ctx.fillRect(pipe.x, 0, pipeWidth, pipe.top);
+        // Bottom pipe
+        ctx.fillRect(pipe.x, pipe.bottom, pipeWidth, canvas.height - pipe.bottom);
+
+        // Pipe borders
+        ctx.fillStyle = '#16a34a';
+        ctx.fillRect(pipe.x - 4, pipe.top - 20, pipeWidth + 8, 20);
+        ctx.fillRect(pipe.x - 4, pipe.bottom, pipeWidth + 8, 20);
+        ctx.fillStyle = '#22c55e';
+      });
+
+      // Draw bird (cute circle + eye)
+      ctx.beginPath();
+      ctx.arc(bird.x, bird.y, bird.radius, 0, Math.PI * 2);
+      ctx.fillStyle = '#f97316';
+      ctx.fill();
+      ctx.closePath();
+
+      // Eye
+      ctx.beginPath();
+      ctx.arc(bird.x + 7, bird.y - 5, 5, 0, Math.PI * 2);
+      ctx.fillStyle = 'white';
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(bird.x + 8, bird.y - 5, 2.5, 0, Math.PI * 2);
+      ctx.fillStyle = 'black';
+      ctx.fill();
+
+      // Wing
+      ctx.beginPath();
+      ctx.ellipse(bird.x - 6, bird.y + 4, 10, 6, -0.4, 0, Math.PI * 2);
+      ctx.fillStyle = '#ea580c';
+      ctx.fill();
+    }
+
+    // Update game logic
+    function update() {
+      if (gameState !== 'playing') return;
+
+      // Bird physics
+      bird.velocity += gravity;
+      bird.y += bird.velocity;
+
+      // Floor / ceiling collision
+      if (bird.y + bird.radius > canvas.height || bird.y - bird.radius < 0) {
+        gameOver();
+      }
+
+      // Move pipes + collision
+      pipes.forEach(pipe => {
+        pipe.x -= pipeSpeed;
+
+        // Collision
+        if (
+          bird.x + bird.radius > pipe.x &&
+          bird.x - bird.radius < pipe.x + pipeWidth &&
+          (bird.y - bird.radius < pipe.top || bird.y + bird.radius > pipe.bottom)
+        ) {
+          gameOver();
+        }
+
+        // Score
+        if (!pipe.passed && pipe.x + pipeWidth < bird.x) {
+          pipe.passed = true;
+          score++;
+          scoreEl.textContent = score;
+        }
+      });
+
+      // Remove old pipes + add new ones
+      if (pipes.length && pipes[0].x < -pipeWidth) {
+        pipes.shift();
+      }
+
+      if (frame % 100 === 0) {
+        createPipe();
+      }
+
+      frame++;
+    }
+
+    function gameOver() {
+      gameState = 'over';
+      messageEl.innerHTML = `Game Over<br>Score: ${score}`;
+      if (score > highScore) {
+        highScore = score;
+        localStorage.setItem('tapFlyerHigh', highScore);
+        highScoreEl.textContent = `New Best: ${highScore}!`;
+      } else {
+        highScoreEl.textContent = `Best: ${highScore}`;
+      }
+    }
+
+    // Game loop
+    function loop() {
+      update();
+      draw();
+      requestAnimationFrame(loop);
+    }
+    loop();
+
+    // Controls - works for both touch and mouse
+    function flap() {
+      if (gameState === 'start' || gameState === 'over') {
+        reset();
+      } else if (gameState === 'playing') {
+        bird.velocity = jump;
+      }
+    }
+
+    canvas.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      flap();
+    }, { passive: false });
+
+    canvas.addEventListener('mousedown', flap);
+  </script>
+</body>
+</html>
