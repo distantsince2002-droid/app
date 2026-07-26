@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Isekai Life Tycoon</title>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none}
+    body{font-family:system-ui,-apple-system,sans-serif;background:#0c0618;color:#e2e8f0;min-height:100vh;padding:10px;overflow-x:hidden}
+    .container{max-width:430px;margin:0 auto}
+
+    /* ========== ANIMATED AVATAR ========== */
+    .avatar-stage{
+      width:140px;height:160px;margin:0 auto 8px;position:relative;
+      display:flex;justify-content:center;align-items:flex-end;
+    }
+    .character{
+      position:relative;width:90px;height:140px;
+      animation: idleBob 2.4s ease-in-out infinite;
+      transform-origin: bottom center;
+    }
+    .character.tapped{
+      animation: jumpTap 0.45s ease;
+    }
+    @keyframes idleBob{
+      0%,100%{transform:translateY(0)}
+      50%{transform:translateY(-7px)}
+    }
+    @keyframes jumpTap{
+      0%{transform:translateY(0) scale(1)}
+      40%{transform:translateY(-22px) scale(1.08)}
+      100%{transform:translateY(0) scale(1)}
+    }
+
+    /* Body parts */
+    .char-head{
+      position:absolute;top:0;left:50%;transform:translateX(-50%);
+      width:54px;height:54px;border-radius:50%;
+      background:var(--skin);z-index:5;
+      box-shadow:inset -4px -4px 0 rgba(0,0,0,0.12);
+    }
+    .char-hair{
+      position:absolute;top:-12px;left:50%;transform:translateX(-50%);
+      width:64px;height:36px;border-radius:40px 40px 0 0;
+      background:var(--hair);z-index:6;
+    }
+    .char-eyes{
+      position:absolute;top:22px;left:0;width:100%;display:flex;justify-content:center;gap:12px;z-index:7;
+    }
+    .eye{
+      width:8px;height:10px;background:#111;border-radius:50%;
+      position:relative;
+      transform-origin: center;
+      animation: blink 3.8s infinite;
+    }
+    .eye:nth-child(2){
+      animation-delay: 0.15s; /* slight stagger for natural look */
+    }
+    .eye::after{
+      content:"";position:absolute;top:1px;left:1px;
+      width:3px;height:3px;background:white;border-radius:50%;
+    }
+    /* Blinking animation */
+    @keyframes blink {
+      0%, 90%, 100% {
+        transform: scaleY(1);
+      }
+      92%, 96% {
+        transform: scaleY(0.08);
+      }
+    }
+
+    .char-body{
+      position:absolute;top:48px;left:50%;transform:translateX(-50%);
+      width:46px;height:48px;border-radius:12px 12px 8px 8px;
+      background:var(--outfit);z-index:4;
+    }
+    .char-arm{
+      position:absolute;top:52px;width:12px;height:36px;border-radius:8px;
+      background:var(--skin);z-index:3;
+    }
+    .char-arm.left{left:8px;transform:rotate(12deg)}
+    .char-arm.right{right:8px;transform:rotate(-12deg)}
+    .char-leg{
+      position:absolute;bottom:0;width:14px;height:32px;border-radius:6px;
+      background:#2d2d2d;z-index:2;
+    }
+    .char-leg.left{left:22px}
+    .char-leg.right{right:22px}
+
+    /* Race extras */
+    .ears{position:absolute;top:14px;width:100%;z-index:4}
+    .ear{
+      position:absolute;width:12px;height:20px;background:var(--skin);
+      border-radius:50% 50% 0 0;
+    }
+    .ear.left{left:-6px;transform:rotate(-25deg)}
+    .ear.right{right:-6px;transform:rotate(25deg)}
+    .horns{position:absolute;top:-8px;width:100%;z-index:6;display:none}
+    .horn{
+      position:absolute;width:10px;height:18px;background:#4a1c6b;
+      border-radius:4px 4px 0 0;
+    }
+    .horn.left{left:10px;transform:rotate(-20deg)}
+    .horn.right{right:10px;transform:rotate(20deg)}
+
+    .accessory{
+      position:absolute;top:-20px;right:-10px;font-size:28px;z-index:10;
+      filter:drop-shadow(0 2px 3px rgba(0,0,0,0.4));
+    }
+
+    .nametag{background:#1e1b4b;border:2px solid #8b5cf6;border-radius:20px;padding:4px 16px;font-size:15px;font-weight:700;display:inline-block;margin-top:2px}
+    .prestige-visual{color:#c084fc;font-size:14px;margin:3px 0}
+    .money{font-size:26px;font-weight:800;color:#fbbf24}
+    .income{font-size:12px;color:#a5b4fc}
+    .career{background:#1e1b4b;padding:4px 12px;border-radius:20px;display:inline-block;margin-top:4px;font-size:12px}
+    .life-bar{margin:6px 0;background:#1e1b4b;border-radius:10px;padding:6px}
+    .life-text{font-size:11px;display:flex;justify-content:space-between}
+    .life-fill{height:6px;background:#312e81;border-radius:4px;margin-top:3px;overflow:hidden}
+    .life-fill-inner{height:100%;background:linear-gradient(90deg,#22c55e,#eab308,#ef4444)}
+
+    .tap-btn{
+      width:100%;height:82px;border:none;border-radius:18px;color:white;font-size:23px;font-weight:800;
+      background:linear-gradient(135deg,#7c3aed,#4c1d95);margin:10px 0;position:relative;overflow:hidden;
+    }
+    .tap-btn:active{transform:scale(0.97)}
+    .ad-btn{width:100%;padding:11px;background:#0f766e;border:none;border-radius:12px;color:white;font-weight:600;margin-bottom:8px}
+
+    .section{background:#1e1b4b;border-radius:14px;padding:11px;margin-bottom:10px}
+    .section h3{font-size:14px;margin-bottom:7px;color:#c4b5fd}
+    .stat-row{display:flex;justify-content:space-between;font-size:12px;margin:3px 0}
+    .shop-item{background:#0c0618;border-radius:11px;padding:9px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center;gap:8px}
+    button{background:#7c3aed;color:white;border:none;padding:6px 11px;border-radius:8px;font-weight:600;font-size:12px}
+    button:disabled{background:#4c1d95;opacity:.45}
+    .owned{color:#4ade80;font-size:11px}
+    .progress-bar{height:5px;background:#312e81;border-radius:3px;margin-top:3px;overflow:hidden}
+    .progress-fill{height:100%;background:#8b5cf6}
+    .tabs{display:flex;gap:4px;margin-bottom:9px;overflow-x:auto}
+    .tab{padding:6px 10px;background:#1e1b4b;border-radius:14px;font-size:11px;white-space:nowrap;border:2px solid transparent}
+    .tab.active{border-color:#8b5cf6;background:#4c1d95}
+    input[type=text]{background:#0c0618;border:1px solid #4c1d95;color:white;padding:7px;border-radius:9px;width:100%;font-size:14px}
+    .custom-btn{background:#312e81;border:1px solid #8b5cf6;color:#e2e8f0;padding:7px 10px;border-radius:10px;font-size:12px;margin:2px}
+    .custom-btn.selected{background:#7c3aed;border-color:#c4b5fd}
+
+    .floating-text{
+      position:fixed;left:50%;top:160px;transform:translateX(-50%);
+      font-weight:800;font-size:22px;color:#fbbf24;
+      text-shadow:0 0 8px #f59e0b;animation:floatUp 0.9s forwards;z-index:99;pointer-events:none;
+    }
+    @keyframes floatUp{
+      0%{opacity:1;transform:translateX(-50%) translateY(0)}
+      100%{opacity:0;transform:translateX(-50%) translateY(-70px)}
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <div style="text-align:center">
+    <!-- ANIMATED CHARACTER -->
+    <div class="avatar-stage">
+      <div class="character" id="character">
+        <div class="char-hair" id="charHair"></div>
+        <div class="char-head" id="charHead">
+          <div class="ears" id="charEars" style="display:none">
+            <div class="ear left"></div>
+            <div class="ear right"></div>
+          </div>
+          <div class="horns" id="charHorns">
+            <div class="horn left"></div>
+            <div class="horn right"></div>
+          </div>
+          <div class="char-eyes" id="charEyes">
+            <div class="eye"></div>
+            <div class="eye"></div>
+          </div>
+        </div>
+        <div class="char-body" id="charBody"></div>
+        <div class="char-arm left"></div>
+        <div class="char-arm right"></div>
+        <div class="char-leg left"></div>
+        <div class="char-leg right"></div>
+        <div class="accessory" id="charAcc"></div>
+      </div>
+    </div>
+
+    <div class="nametag" id="nametag">Hero</div>
+    <div class="prestige-visual" id="prestigeStars">?????</div>
+    <div class="money" id="money">0 Gold</div>
+    <div class="income" id="income">+0 / sec</div>
+    <div class="career" id="career">Reincarnated Nobody</div>
+
+    <div class="life-bar">
+      <div class="life-text">
+        <span id="ageText">Age 18 • Day 1</span>
+        <span id="lifeLeft">82y left</span>
+      </div>
+      <div class="life-fill"><div class="life-fill-inner" id="lifeBar" style="width:82%"></div></div>
+    </div>
+  </div>
+
+  <button class="tap-btn" id="tapBtn">GATHER GOLD</button>
+  <button class="ad-btn" id="adBtn">? Watch Ad (Skip + Gold)</button>
+
+  <div class="section">
+    <h3>Power</h3>
+    <div class="stat-row"><span>Tap Lv.<span id="tapLevel">1</span></span><span id="tapXp">0/40</span></div>
+    <div class="progress-bar"><div class="progress-fill" id="tapBar"></div></div>
+    <div class="stat-row" style="margin-top:6px"><span>Idle Lv.<span id="idleLevel">1</span></span><span id="idleXp">0/55</span></div>
+    <div class="progress-bar"><div class="progress-fill" id="idleBar"></div></div>
+    <div class="stat-row" style="margin-top:6px"><span>Combat Power</span><span id="combatPower">10</span></div>
+  </div>
+
+  <div class="tabs">
+    <div class="tab active" data-tab="main">Main</div>
+    <div class="tab" data-tab="avatar">Avatar</div>
+    <div class="tab" data-tab="shop">Shop</div>
+    <div class="tab" data-tab="dungeon">Dungeon</div>
+    <div class="tab" data-tab="more">More</div>
+  </div>
+
+  <div id="mainTab">
+    <div class="section">
+      <h3>Status</h3>
+      <div id="statusText" style="font-size:12px;color:#c4b5fd">Avatar now has blinking eyes + idle animation!</div>
+    </div>
+  </div>
+
+  <!-- AVATAR TAB -->
+  <div id="avatarTab" style="display:none">
+    <div class="section">
+      <h3>Name</h3>
+      <input type="text" id="nameInput" maxlength="14">
+      <button style="width:100%;margin-top:8px" onclick="setName()">Save Name</button>
+    </div>
+
+    <div class="section">
+      <h3>Race</h3>
+      <div id="raceOptions" style="display:flex;flex-wrap:wrap;gap:4px"></div>
+    </div>
+    <div class="section">
+      <h3>Hair Colour</h3>
+      <div id="hairOptions" style="display:flex;flex-wrap:wrap;gap:4px"></div>
+    </div>
+    <div class="section">
+      <h3>Outfit Colour</h3>
+      <div id="outfitOptions" style="display:flex;flex-wrap:wrap;gap:4px"></div>
+    </div>
+    <div class="section">
+      <h3>Accessory</h3>
+      <div id="accOptions" style="display:flex;flex-wrap:wrap;gap:4px"></div>
+    </div>
+  </div>
+
+  <div id="shopTab" style="display:none">
+    <div class="section"><h3>Clothing</h3><div id="clothesList"></div></div>
+    <div class="section"><h3>Housing</h3><div id="housingList"></div></div>
+  </div>
+
+  <div id="dungeonTab" style="display:none">
+    <div class="section"><h3>Dungeons</h3><div id="dungeonList"></div></div>
+  </div>
+
+  <div id="moreTab" style="display:none">
+    <div class="section"><h3>Pets</h3><div id="petList"></div></div>
+    <div class="section"><h3>Businesses</h3><div id="bizList"></div></div>
+    <div class="section">
+      <h3>Reincarnation</h3>
+      <div class="stat-row"><span>Level</span><span id="prestigeLevel">0</span></div>
+      <div class="stat-row"><span>Soul Points</span><span id="prestigePoints" style="color:#c084fc">0</span></div>
+      <button id="doPrestige" style="width:100%;margin-top:6px;background:linear-gradient(#a855f7,#7c3aed)" disabled>Reincarnate</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ===== AVATAR DATA =====
+const races = [
+  {name:"Human", skin:"#f5c6a5", hair:"#4a3728", ears:false, horns:false},
+  {name:"Elf", skin:"#f5d0b5", hair:"#c9a227", ears:true, horns:false},
+  {name:"Dark Elf", skin:"#6b4e71", hair:"#1a1a2e", ears:true, horns:false},
+  {name:"Demon", skin:"#8b4557", hair:"#2d1b4e", ears:false, horns:true},
+  {name:"Beastkin", skin:"#e8b98a", hair:"#5c4033", ears:true, horns:false},
+  {name:"Angel", skin:"#ffe4c9", hair:"#f0e6d0", ears:false, horns:false}
+];
+
+const hairColors = [
+  {name:"Black", color:"#1a1a1a"},
+  {name:"Brown", color:"#5c4033"},
+  {name:"Blonde", color:"#e6c35c"},
+  {name:"White", color:"#f0f0f0"},
+  {name:"Red", color:"#a63d40"},
+  {name:"Blue", color:"#3b82f6"},
+  {name:"Purple", color:"#7c3aed"}
+];
+
+const outfitColors = [
+  {name:"Rags", color:"#6b7280"},
+  {name:"Blue", color:"#3b82f6"},
+  {name:"Red", color:"#ef4444"},
+  {name:"Green", color:"#22c55e"},
+  {name:"Purple", color:"#8b5cf6"},
+  {name:"Gold", color:"#eab308"},
+  {name:"Black", color:"#1f2937"}
+];
+
+const accessories = [
+  {name:"None", emoji:""},
+  {name:"Sword", emoji:"??"},
+  {name:"Staff", emoji:"??"},
+  {name:"Wings", emoji:"??"},
+  {name:"Halo", emoji:"??"},
+  {name:"Crown", emoji:"??"}
+];
+
+// ===== GAME DATA =====
+const careers = [
+  {name:"Reincarnated Nobody",income:0.4,req:0},
+  {name:"Village Helper",income:1.8,req:40},
+  {name:"F-Rank Adventurer",income:6,req:250},
+  {name:"D-Rank",income:18,req:1200},
+  {name:"B-Rank",income:55,req:7000},
+  {name:"A-Rank Hero",income:180,req:40000},
+  {name:"S-Rank",income:600,req:200000},
+  {name:"Emperor",income:2500,req:1000000}
+];
+
+const clothes = [
+  {name:"Tattered Rags",cost:0},
+  {name:"Traveler Clothes",cost:25},
+  {name:"Adventurer Gear",cost:180},
+  {name:"Magic Robes",cost:1200},
+  {name:"Hero Armor",cost:9000},
+  {name:"Divine Regalia",cost:70000}
+];
+
+const housing = [
+  {name:"Hay Bed",cost:40,buff:1.15,emoji:"???"},
+  {name:"Inn Room",cost:300,buff:1.4,emoji:"???"},
+  {name:"Cottage",cost:2000,buff:1.9,emoji:"??"},
+  {name:"Manor",cost:15000,buff:2.8,emoji:"??"},
+  {name:"Castle",cost:120000,buff:4.5,emoji:"??"}
+];
+
+const dungeons = [
+  {id:"goblin",name:"Goblin Cave",power:15,reward:50,emoji:"??"},
+  {id:"wolf",name:"Wolf Den",power:40,reward:140,emoji:"??"},
+  {id:"undead",name:"Crypt",power:90,reward:400,emoji:"??"},
+  {id:"dragon",name:"Dragon Lair",power:220,reward:1400,emoji:"??"}
+];
+
+const pets = [
+  {id:"slime",name:"Slime",cost:150,emoji:"??",buff:0.08},
+  {id:"fairy",name:"Fairy",cost:900,emoji:"??",buff:0.15},
+  {id:"wolf",name:"Spirit Wolf",cost:6000,emoji:"??",buff:0.25}
+];
+
+const businesses = [
+  {id:"stall",name:"Market Stall",cost:800,income:3,req:2},
+  {id:"tavern",name:"Tavern",cost:6000,income:15,req:3},
+  {id:"shop",name:"Magic Shop",cost:45000,income:70,req:4}
+];
+
+// ===== STATE =====
+let state = {
+  name: "Hero",
+  gold: 0,
+  totalEarned: 0,
+  career: 0,
+  tapLevel:1, tapXp:0,
+  idleLevel:1, idleXp:0,
+  clothes:0, ownedClothes:[0],
+  housing:-1,
+  ownedDungeons:{},
+  pets:{},
+  businesses:{},
+  age:18, maxAge:100, days:1,
+  prestige:0, prestigePoints:0,
+  permIdle:1, permTap:1, startGold:0, xpMult:1,
+  lastAd:0, lastSave:Date.now(),
+  boughtPrestige:[],
+  avatar: { race:0, hair:0, outfit:0, acc:0 }
+};
+
+// ===== HELPERS =====
+function format(n){
+  if(n>=1e6)return(n/1e6).toFixed(1)+"M";
+  if(n>=1e3)return(n/1e3).toFixed(1)+"K";
+  return Math.floor(n);
+}
+
+function getCombatPower(){
+  return Math.floor((12 + state.tapLevel*4 + state.career*10) * (1+state.prestige*0.1));
+}
+
+function getIncome(){
+  let mult = state.permIdle * (1+state.prestige*0.1);
+  if(state.housing>=0) mult *= housing[state.housing].buff;
+  for(const id in state.pets){
+    const p = pets.find(x=>x.id===id);
+    if(p) mult += (state.pets[id].level||1) * p.buff;
+  }
+  let biz = 0;
+  for(const id in state.businesses){
+    const b = businesses.find(x=>x.id===id);
+    if(b) biz += b.income;
+  }
+  return careers[state.career].income * state.idleLevel * mult + biz;
+}
+
+function getTapPower(){
+  return (1 + state.tapLevel*0.9) * state.permTap * (1+state.prestige*0.1);
+}
+
+// ===== AVATAR RENDER =====
+function renderAvatar(){
+  const a = state.avatar;
+  const race = races[a.race];
+  const hair = hairColors[a.hair];
+  const outfit = outfitColors[a.outfit];
+  const acc = accessories[a.acc];
+
+  document.getElementById("charHead").style.background = race.skin;
+  document.getElementById("charHair").style.background = hair.color;
+  document.getElementById("charBody").style.background = outfit.color;
+  document.querySelectorAll(".char-arm").forEach(el => el.style.background = race.skin);
+
+  document.getElementById("charEars").style.display = race.ears ? "block" : "none";
+  document.getElementById("charHorns").style.display = race.horns ? "block" : "none";
+  document.getElementById("charAcc").textContent = acc.emoji;
+}
+
+// ===== ACTIONS =====
+function tap(){
+  if(state.age >= state.maxAge) return;
+  const power = getTapPower();
+  state.gold += power;
+  state.totalEarned += power;
+  state.tapXp += 1 * state.xpMult;
+  if(state.tapXp >= 40 + state.tapLevel*22){state.tapXp=0;state.tapLevel++;}
+  state.idleXp += 0.4 * state.xpMult;
+  if(state.idleXp >= 55 + state.idleLevel*35){state.idleXp=0;state.idleLevel++;}
+
+  // Animate character jump
+  const char = document.getElementById("character");
+  char.classList.remove("tapped");
+  void char.offsetWidth;
+  char.classList.add("tapped");
+
+  // Floating gold text
+  const float = document.createElement("div");
+  float.className = "floating-text";
+  float.textContent = "+"+format(power);
+  document.body.appendChild(float);
+  setTimeout(()=>float.remove(),900);
+
+  updateUI();
+  save();
+}
+
+function setAvatar(part, index){
+  state.avatar[part] = index;
+  renderAvatar();
+  updateUI();
+  save();
+}
+
+function setName(){
+  const v = document.getElementById("nameInput").value.trim();
+  if(v){state.name = v.substring(0,14); updateUI(); save();}
+}
+
+function buyClothes(i){
+  if(state.ownedClothes.includes(i)){
+    state.clothes = i;
+    state.avatar.outfit = Math.min(i, outfitColors.length-1);
+  } else if(state.gold >= clothes[i].cost){
+    state.gold -= clothes[i].cost;
+    state.ownedClothes.push(i);
+    state.clothes = i;
+    state.avatar.outfit = Math.min(i, outfitColors.length-1);
+  }
+  renderAvatar();
+  updateUI(); save();
+}
+
+function buyHousing(i){
+  if(state.gold >= housing[i].cost && state.housing === i-1){
+    state.gold -= housing[i].cost;
+    state.housing = i;
+    updateUI(); save();
+  }
+}
+
+function enterDungeon(id){
+  const d = dungeons.find(x=>x.id===id);
+  if(getCombatPower() < d.power * 0.6) return alert("Too weak!");
+  const reward = d.reward * (0.9 + Math.random()*0.4);
+  state.gold += reward;
+  state.totalEarned += reward;
+  alert(`Cleared ${d.name}!\n+${format(reward)} Gold`);
+  updateUI(); save();
+}
+
+function buyPet(id){
+  const p = pets.find(x=>x.id===id);
+  if(!state.pets[id] && state.gold >= p.cost){
+    state.gold -= p.cost;
+    state.pets[id] = {level:1};
+    updateUI(); save();
+  }
+}
+
+function buyBusiness(id){
+  const b = businesses.find(x=>x.id===id);
+  if(!state.businesses[id] && state.gold >= b.cost && state.career >= b.req){
+    state.gold -= b.cost;
+    state.businesses[id] = 1;
+    updateUI(); save();
+  }
+}
+
+function tryPromote(){
+  if(state.career >= careers.length-1) return;
+  if(state.ownedClothes.length < 2) return alert("Buy Traveler Clothes first!");
+  if(state.totalEarned >= careers[state.career+1].req){
+    state.career++;
+    updateUI(); save();
+  }
+}
+
+function doPrestige(){
+  if(state.career < 3) return;
+  const gain = Math.max(1, Math.floor(Math.pow(state.totalEarned/600, 0.47)));
+  if(!confirm(`Reincarnate for ${gain} Soul Points?`)) return;
+  state.prestigePoints += gain;
+  state.prestige++;
+  state.gold = state.startGold;
+  state.totalEarned = 0;
+  state.career = 0;
+  state.tapLevel = 1; state.tapXp = 0;
+  state.idleLevel = 1; state.idleXp = 0;
+  state.clothes = 0; state.ownedClothes = [0];
+  state.housing = -1;
+  state.businesses = {};
+  state.age = 18; state.days = 1;
+  updateUI(); save();
+  alert(`Reincarnated! +${gain} Soul Points`);
+}
+
+function watchAd(){
+  if(Date.now() - state.lastAd < 40000) return alert("Cooldown");
+  state.lastAd = Date.now();
+  const r = getIncome()*55 + 100;
+  state.gold += r;
+  state.totalEarned += r;
+  state.days += 3;
+  alert(`+${format(r)} Gold`);
+  updateUI(); save();
+}
+
+// ===== UI =====
+function updateUI(){
+  document.getElementById("money").textContent = format(state.gold) + " Gold";
+  document.getElementById("income").textContent = `+${format(getIncome())} / sec`;
+  document.getElementById("career").textContent = careers[state.career].name;
+  document.getElementById("nametag").textContent = state.name;
+  document.getElementById("nameInput").value = state.name;
+  document.getElementById("combatPower").textContent = getCombatPower();
+
+  renderAvatar();
+
+  let stars = "";
+  for(let i=0;i<5;i++) stars += i < state.prestige ? "?" : "?";
+  document.getElementById("prestigeStars").textContent = stars + ` R${state.prestige}`;
+
+  const left = Math.max(0, state.maxAge - Math.floor(state.age));
+  document.getElementById("ageText").textContent = `Age ${Math.floor(state.age)} • Day ${state.days}`;
+  document.getElementById("lifeLeft").textContent = left + "y left";
+  document.getElementById("lifeBar").style.width = (left / state.maxAge * 100) + "%";
+
+  document.getElementById("tapLevel").textContent = state.tapLevel;
+  document.getElementById("idleLevel").textContent = state.idleLevel;
+
+  // Avatar options
+  function makeBtns(container, list, part){
+    let h = "";
+    list.forEach((item,i)=>{
+      const sel = state.avatar[part] === i ? "selected" : "";
+      h += `<button class="custom-btn ${sel}" onclick="setAvatar('${part}',${i})">${item.name || item.emoji}</button>`;
+    });
+    document.getElementById(container).innerHTML = h;
+  }
+  makeBtns("raceOptions", races, "race");
+  makeBtns("hairOptions", hairColors, "hair");
+  makeBtns("outfitOptions", outfitColors, "outfit");
+  makeBtns("accOptions", accessories, "acc");
+
+  // Clothes
+  let h = "";
+  clothes.forEach((c,i)=>{
+    const owned = state.ownedClothes.includes(i);
+    const eq = state.clothes === i;
+    h += `<div class="shop-item"><div>${c.name}</div>
+      <div>${owned ? (eq ? '<span class="owned">Equipped</span>' : `<button onclick="buyClothes(${i})">Equip</button>`) 
+        : `<button ${state.gold>=c.cost?"":"disabled"} onclick="buyClothes(${i})">${format(c.cost)}G</button>`}</div></div>`;
+  });
+  document.getElementById("clothesList").innerHTML = h;
+
+  // Housing
+  h = "";
+  housing.forEach((item,i)=>{
+    const owned = state.housing >= i;
+    const can = state.gold >= item.cost && state.housing === i-1;
+    h += `<div class="shop-item"><div style="font-size:22px">${item.emoji}</div><div>${item.name}</div>
+      <div>${owned ? '<span class="owned">Owned</span>' : `<button ${can?"":"disabled"} onclick="buyHousing(${i})">${format(item.cost)}G</button>`}</div></div>`;
+  });
+  document.getElementById("housingList").innerHTML = h;
+
+  // Dungeons
+  h = "";
+  dungeons.forEach(d=>{
+    h += `<div class="shop-item"><div style="font-size:22px">${d.emoji}</div><div>${d.name}</div>
+      <button onclick="enterDungeon('${d.id}')">Enter</button></div>`;
+  });
+  document.getElementById("dungeonList").innerHTML = h;
+
+  // Pets
+  h = "";
+  pets.forEach(p=>{
+    const d = state.pets[p.id];
+    if(!d){
+      h += `<div class="shop-item"><div style="font-size:22px">${p.emoji}</div><div>${p.name}</div>
+        <button ${state.gold>=p.cost?"":"disabled"} onclick="buyPet('${p.id}')">${format(p.cost)}G</button></div>`;
+    } else {
+      h += `<div class="shop-item"><div style="font-size:22px">${p.emoji}</div><div>Lv.${d.level} ${p.name}</div>
+        <span class="owned">Owned</span></div>`;
+    }
+  });
+  document.getElementById("petList").innerHTML = h;
+
+  // Business
+  h = "";
+  businesses.forEach(b=>{
+    const owned = !!state.businesses[b.id];
+    h += `<div class="shop-item"><div>${b.name}</div>
+      <div>${owned ? '<span class="owned">Owned</span>' : `<button ${state.gold>=b.cost&&state.career>=b.req?"":"disabled"} onclick="buyBusiness('${b.id}')">${format(b.cost)}G</button>`}</div></div>`;
+  });
+  document.getElementById("bizList").innerHTML = h;
+
+  document.getElementById("prestigeLevel").textContent = state.prestige;
+  document.getElementById("prestigePoints").textContent = state.prestigePoints;
+  document.getElementById("doPrestige").disabled = state.career < 3;
+}
+
+// Events
+document.getElementById("tapBtn").onclick = tap;
+document.getElementById("tapBtn").addEventListener("touchstart", e=>{e.preventDefault();tap();},{passive:false});
+document.getElementById("adBtn").onclick = watchAd;
+document.getElementById("doPrestige").onclick = doPrestige;
+
+document.querySelectorAll(".tab").forEach(t=>{
+  t.onclick = ()=>{
+    document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));
+    t.classList.add("active");
+    ["main","avatar","shop","dungeon","more"].forEach(n=>{
+      document.getElementById(n+"Tab").style.display = t.dataset.tab===n ? "block" : "none";
+    });
+  };
+});
+
+// Idle
+setInterval(()=>{
+  if(state.age >= state.maxAge) return;
+  state.days++;
+  if(state.days % 30 === 0) state.age += 0.1;
+  state.gold += getIncome();
+  state.totalEarned += getIncome();
+  updateUI();
+  save();
+}, 10000);
+
+function save(){
+  state.lastSave = Date.now();
+  localStorage.setItem("isekaiAvatarBlink", JSON.stringify(state));
+}
+function load(){
+  const s = localStorage.getItem("isekaiAvatarBlink");
+  if(s) Object.assign(state, JSON.parse(s));
+}
+
+load();
+renderAvatar();
+updateUI();
+</script>
+</body>
+</html>
