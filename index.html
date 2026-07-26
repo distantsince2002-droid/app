@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Isekai Life Tycoon</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none}
+body{font-family:system-ui,-apple-system,sans-serif;background:#0c0818;color:#e2e8f0;min-height:100vh;overflow-x:hidden}
+.container{max-width:430px;margin:0 auto;min-height:100vh;position:relative;padding-bottom:78px}
+
+/* ===== FAIRYTALE HOUSE ===== */
+.house-bg{
+  position:absolute;top:0;left:0;width:100%;height:280px;
+  background:linear-gradient(180deg,#1a1030 0%,#0c0818 100%);
+  z-index:0;overflow:hidden;
+}
+.house{
+  position:absolute;bottom:35px;left:50%;transform:translateX(-50%);
+  width:250px;height:180px;opacity:0.42;
+}
+.house-body{
+  position:absolute;bottom:0;width:100%;height:125px;
+  background:linear-gradient(#5b3a29,#3d251a);
+  border-radius:10px 10px 0 0;
+  box-shadow:0 0 60px rgba(0,0,0,0.6);
+}
+.house-roof{
+  position:absolute;top:-50px;left:-30px;width:310px;height:60px;
+  background:linear-gradient(#4a2c1a,#2d1a0f);
+  clip-path:polygon(0 100%,50% 0,100% 100%);
+}
+.house-window{
+  position:absolute;width:28px;height:28px;
+  background:radial-gradient(circle at 30% 30%,#fef3c7,#f59e0b);
+  border-radius:4px;box-shadow:0 0 20px #fbbf24;
+}
+
+/* ===== ANIME-STYLE AVATAR ===== */
+.stage{position:relative;z-index:5;height:300px;display:flex;justify-content:center;align-items:flex-end;padding-bottom:18px}
+
+.avatar{
+  position:relative;width:115px;height:185px;z-index:12;
+  animation:breathe 3.4s ease-in-out infinite;
+}
+@keyframes breathe{
+  0%,100%{transform:translateY(0)}
+  50%{transform:translateY(-9px)}
+}
+
+/* Head */
+.av-head{
+  position:absolute;top:0;left:50%;transform:translateX(-50%);
+  width:62px;height:62px;border-radius:50%;
+  background:var(--skin,#ffdbac);
+  box-shadow:inset -8px -8px 0 rgba(0,0,0,0.08),0 6px 16px rgba(0,0,0,0.25);
+  z-index:5;
+}
+
+/* Multi-layer hair */
+.av-hair-back{
+  position:absolute;top:-8px;left:50%;transform:translateX(-50%);
+  width:78px;height:50px;border-radius:50% 50% 0 0;
+  background:var(--hair,#2c1810);z-index:4;
+}
+.av-hair-front{
+  position:absolute;top:-20px;left:50%;transform:translateX(-50%);
+  width:74px;height:40px;border-radius:50% 50% 0 0;
+  background:var(--hair,#2c1810);z-index:6;
+  box-shadow:0 4px 10px rgba(0,0,0,0.2);
+}
+
+/* Large anime eyes */
+.av-eye{
+  position:absolute;top:24px;width:13px;height:16px;
+  background:#1a1a2e;border-radius:50%;
+  animation:blink 4.8s infinite;
+  overflow:hidden;
+}
+.av-eye.l{left:14px}.av-eye.r{right:14px;animation-delay:0.2s}
+.av-eye::before{ /* highlight */
+  content:"";position:absolute;top:3px;left:3px;
+  width:5px;height:5px;background:#fff;border-radius:50%;
+}
+.av-eye::after{ /* smaller highlight */
+  content:"";position:absolute;top:8px;left:7px;
+  width:2.5px;height:2.5px;background:#fff;border-radius:50%;
+}
+@keyframes blink{
+  0%,92%,100%{transform:scaleY(1)}
+  94%{transform:scaleY(0.1)}
+}
+
+/* Soft blush */
+.av-blush{
+  position:absolute;top:38px;width:10px;height:5px;
+  background:rgba(255,120,150,0.35);border-radius:50%;
+}
+.av-blush.l{left:8px}.av-blush.r{right:8px}
+
+/* Body */
+.av-body{
+  position:absolute;top:56px;left:50%;transform:translateX(-50%);
+  width:54px;height:58px;border-radius:18px 18px 14px 14px;
+  background:var(--outfit,#5b6ee1);
+  box-shadow:0 8px 20px rgba(0,0,0,0.3);z-index:4;
+}
+
+/* Arms with better movement */
+.av-arm{
+  position:absolute;top:60px;width:15px;height:44px;border-radius:10px;
+  background:var(--skin);z-index:3;
+  transform-origin:top center;
+}
+.av-arm.l{left:4px;animation:armL 3.4s ease-in-out infinite}
+.av-arm.r{right:4px;animation:armR 3.4s ease-in-out infinite}
+@keyframes armL{0%,100%{transform:rotate(14deg)}50%{transform:rotate(6deg)}}
+@keyframes armR{0%,100%{transform:rotate(-14deg)}50%{transform:rotate(-6deg)}}
+
+.av-leg{position:absolute;bottom:0;width:17px;height:40px;border-radius:8px;background:#1e1b2e;z-index:2}
+.av-leg.l{left:27px}.av-leg.r{right:27px}
+
+/* Weapons */
+.weapon{
+  position:absolute;z-index:13;width:10px;height:52px;border-radius:3px;
+  background:linear-gradient(#e2e8f0,#64748b);
+  box-shadow:0 0 10px rgba(0,0,0,0.4);
+}
+.weapon.l{left:-16px;top:55px;transform:rotate(-30deg)}
+.weapon.r{right:-16px;top:55px;transform:rotate(30deg)}
+.weapon.sword{background:linear-gradient(#f8fafc,#94a3b8)}
+.weapon.staff{height:60px;background:linear-gradient(#ddd6fe,#7c3aed)}
+
+/* ===== ANIME WIFE ===== */
+.wife{
+  position:absolute;bottom:30px;left:50%;transform:translateX(-150px);
+  width:85px;height:145px;z-index:9;
+  animation:wifeFloat 3.6s ease-in-out infinite;
+}
+@keyframes wifeFloat{0%,100%{transform:translateX(-150px) translateY(0)}50%{transform:translateX(-150px) translateY(-7px)}}
+.w-head{
+  width:50px;height:50px;border-radius:50%;background:#ffdbac;
+  margin:0 auto;position:relative;
+  box-shadow:inset -6px -6px 0 rgba(0,0,0,0.08);
+}
+.w-hair{
+  position:absolute;top:-16px;left:50%;transform:translateX(-50%);
+  width:62px;height:36px;border-radius:50% 50% 0 0;
+  background:var(--w-hair,#4a2c1a);
+}
+.w-body{
+  width:44px;height:50px;border-radius:16px;margin:6px auto 0;
+  background:var(--w-color,#ec4899);
+  box-shadow:0 6px 15px rgba(0,0,0,0.25);
+}
+.w-name{font-size:12px;text-align:center;margin-top:6px;color:#f9a8d4;font-weight:600}
+
+/* Pets */
+.pet{
+  position:absolute;bottom:24px;width:42px;height:42px;border-radius:50%;
+  z-index:10;box-shadow:0 5px 15px rgba(0,0,0,0.35);
+  animation:petBob 2.2s ease-in-out infinite;
+}
+.pet.p1{left:18px;background:linear-gradient(#86efac,#22c55e)}
+.pet.p2{right:18px;background:linear-gradient(#e9d5ff,#a855f7);animation-delay:0.4s}
+.pet.p3{left:78px;background:linear-gradient(#cbd5e1,#64748b);animation-delay:0.7s}
+@keyframes petBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
+
+/* UI */
+.top-info{text-align:center;position:relative;z-index:6;padding:6px 14px 0}
+.nametag{display:inline-block;background:#1e1b4b;border:2px solid #a78bfa;border-radius:24px;padding:5px 20px;font-weight:700;font-size:15px}
+.gold{font-size:28px;font-weight:800;color:#fbbf24;margin:8px 0 2px}
+.income{font-size:13px;color:#c4b5fd}
+.power{font-size:12px;color:#f9a8d4;margin-top:3px}
+
+.tap-area{padding:0 18px;margin:14px 0}
+.tap-btn{
+  width:100%;height:76px;border:none;border-radius:22px;
+  background:linear-gradient(135deg,#8b5cf6,#5b21b6);color:white;
+  font-size:21px;font-weight:800;
+  box-shadow:0 10px 30px rgba(139,92,246,0.45);
+}
+
+/* Bottom Nav */
+.bottom-nav{
+  position:fixed;bottom:0;left:0;right:0;max-width:430px;margin:0 auto;
+  background:#11081c;border-top:1px solid #2e1065;
+  display:flex;justify-content:space-around;padding:10px 2px 16px;z-index:100;
+}
+.nav-btn{flex:1;background:none;border:none;color:#94a3b8;font-size:10px;display:flex;flex-direction:column;align-items:center;gap:3px}
+.nav-btn .icon{width:28px;height:28px;border-radius:9px;background:#1e1b4b;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700}
+.nav-btn.active{color:#e9d5ff}
+.nav-btn.active .icon{background:#7c3aed;color:white}
+
+/* Popup */
+.popup{position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:200;display:none;align-items:flex-end;justify-content:center}
+.popup.open{display:flex}
+.popup-content{
+  background:#1a1025;width:100%;max-width:430px;max-height:82vh;
+  border-radius:28px 28px 0 0;padding:18px 14px 34px;overflow-y:auto;
+  animation:slideUp 0.3s ease;
+}
+@keyframes slideUp{from{transform:translateY(50px);opacity:0}to{transform:translateY(0);opacity:1}}
+.popup-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+.popup-title{font-size:18px;font-weight:700}
+.close-x{background:#2e1065;border:none;color:white;width:34px;height:34px;border-radius:50%;font-size:18px}
+
+.card{background:#0f0a1a;border-radius:14px;padding:12px;margin-bottom:10px}
+.card-row{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.bar{height:7px;background:#2e1065;border-radius:4px;margin-top:5px;overflow:hidden}
+.bar-fill{height:100%;border-radius:4px;background:linear-gradient(90deg,#ec4899,#f9a8d4)}
+.btn{background:#7c3aed;color:white;border:none;padding:7px 12px;border-radius:9px;font-weight:600;font-size:12px}
+.btn:disabled{opacity:0.35}
+.btn.pink{background:#ec4899}
+.btn.green{background:#059669}
+
+/* Romance Scene */
+.romance{position:fixed;inset:0;background:rgba(0,0,0,0.93);z-index:600;display:none;flex-direction:column;align-items:center;justify-content:center}
+.romance.show{display:flex}
+.r-stage{position:relative;width:290px;height:220px}
+.r-av,.r-w{position:absolute;bottom:15px;width:95px;height:160px;transition:1.7s cubic-bezier(0.34,1.4,0.64,1)}
+.r-av{left:10px}.r-w{right:10px}
+.romance.s2 .r-av{left:70px}.romance.s2 .r-w{right:70px}
+.romance.s3 .r-av{left:90px;transform:scale(1.1)}.romance.s3 .r-w{right:90px;transform:scale(1.1)}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="house-bg">
+    <div class="house" id="house">
+      <div class="house-body">
+        <div class="house-roof"></div>
+        <div class="house-window" style="top:30px;left:40px"></div>
+        <div class="house-window" style="top:30px;right:40px"></div>
+        <div class="house-window" style="top:75px;left:50%;transform:translateX(-50%)"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="stage">
+    <div class="wife" id="wife" style="display:none">
+      <div class="w-head"><div class="w-hair" id="wHair"></div></div>
+      <div class="w-body" id="wBody"></div>
+      <div class="w-name" id="wName"></div>
+    </div>
+
+    <div class="pet p1" id="pet1" style="display:none"></div>
+    <div class="pet p2" id="pet2" style="display:none"></div>
+    <div class="pet p3" id="pet3" style="display:none"></div>
+
+    <div class="avatar" id="avatar">
+      <div class="av-hair-back" id="avHairBack"></div>
+      <div class="av-head" id="avHead">
+        <div class="av-eye l"></div>
+        <div class="av-eye r"></div>
+        <div class="av-blush l"></div>
+        <div class="av-blush r"></div>
+      </div>
+      <div class="av-hair-front" id="avHairFront"></div>
+      <div class="av-body" id="avBody"></div>
+      <div class="av-arm l"></div>
+      <div class="av-arm r"></div>
+      <div class="av-leg l"></div>
+      <div class="av-leg r"></div>
+      <div class="weapon l" id="wepL" style="display:none"></div>
+      <div class="weapon r" id="wepR" style="display:none"></div>
+    </div>
+  </div>
+
+  <div class="top-info">
+    <div class="nametag" id="nametag">Hero</div>
+    <div class="gold" id="gold">0 Gold</div>
+    <div class="income" id="income">+0 / sec</div>
+    <div class="power" id="power">Power: 12</div>
+  </div>
+
+  <div class="tap-area">
+    <button class="tap-btn" id="tapBtn">GATHER GOLD</button>
+  </div>
+</div>
+
+<div class="bottom-nav">
+  <button class="nav-btn" onclick="openTab('wives')"><div class="icon">W</div>Wives</button>
+  <button class="nav-btn" onclick="openTab('pets')"><div class="icon">P</div>Pets</button>
+  <button class="nav-btn" onclick="openTab('hunts')"><div class="icon">H</div>Hunts</button>
+  <button class="nav-btn" onclick="openTab('bosses')"><div class="icon">B</div>Bosses</button>
+  <button class="nav-btn" onclick="openTab('avatar')"><div class="icon">A</div>Avatar</button>
+  <button class="nav-btn" onclick="openTab('store')"><div class="icon">S</div>Store</button>
+  <button class="nav-btn" onclick="openTab('story')"><div class="icon">Q</div>Quests</button>
+</div>
+
+<div class="popup" id="popup">
+  <div class="popup-content">
+    <div class="popup-header">
+      <div class="popup-title" id="pTitle">Menu</div>
+      <button class="close-x" onclick="closeTab()">×</button>
+    </div>
+    <div id="pBody"></div>
+  </div>
+</div>
+
+<div class="romance" id="romance">
+  <div class="r-stage">
+    <div class="r-av" id="rAv"></div>
+    <div class="r-w" id="rW"></div>
+  </div>
+  <div style="color:#f9a8d4;font-size:17px;margin-top:20px;font-weight:600" id="rText"></div>
+  <button class="btn pink" style="margin-top:24px;padding:11px 30px" onclick="closeRomance()">Continue</button>
+</div>
+
+<script>
+// Data (kept from previous for continuity - 25 wives, etc.)
+const wives = [];
+const wifeNames = ["Lily","Aria","Mira","Seraphina","Nyx","Freya","Luna","Isabella","Raven","Aurora","Valeria","Celeste","Hilda","Sakura","Iris","Nova","Sylph","Ember","Frost","Jade","Shadow","Pearl","Storm","Velvet","Eternal"];
+const wifeColors = ["#f9a8d4","#a5b4fc","#c084fc","#fde68a","#9f1239","#fb923c","#67e8f9","#f472b6","#64748b","#fef08a","#f87171","#e0f2fe","#94a3b8","#fb7185","#86efac","#fdba74","#a5f3fc","#f87171","#bae6fd","#4ade80","#1e293b","#fce7f3","#facc15","#e9d5ff","#c4b5fd"];
+for(let i=0;i<25;i++){
+  wives.push({
+    id:"w"+i, name:wifeNames[i], color:wifeColors[i],
+    cost:280*Math.pow(1.52,i), req:Math.floor(i/3.2),
+    buffType:["power","business","quest","tap","idle"][i%5],
+    buffValue:0.045+i*0.007
+  });
+}
+
+const pets = [];
+const petNames = ["Slime","Fairy","Wolf","Phoenix","Dragonling","Owl","Fox","Panther","Griffin","Serpent","Golem","Sprite","Raven","Tiger","Unicorn"];
+for(let i=0;i<15;i++) pets.push({id:"p"+i,name:petNames[i],cost:200*Math.pow(1.58,i),buff:0.08+i*0.022});
+
+const weapons = [];
+const wepTypes = ["sword","axe","staff","bow","dagger","spear","hammer","scythe"];
+for(let i=0;i<30;i++){
+  weapons.push({id:"wp"+i,name:wepTypes[i%8]+" +"+(Math.floor(i/3)+1),type:wepTypes[i%8],cost:140*Math.pow(1.36,i),power:5+i*3.1});
+}
+
+const houses = [];
+const houseNames = ["Hay Bed","Wooden Hut","Stone Cottage","Farmhouse","Town House","Villa","Manor","Estate","Fortress","Castle","Royal Keep","Sky Tower","Crystal Palace","Dragon Nest","Celestial Hall","Void Mansion","Eternal Citadel","Godrealm Palace"];
+for(let i=0;i<18;i++){
+  houses.push({name:houseNames[i],cost:220*Math.pow(1.62,i),color:`hsl(${25+i*15},42%,32%)`,roof:`hsl(${25+i*15},48%,20%)`,buff:1.15+i*0.17});
+}
+
+const bosses = [
+  {id:"b1",name:"Goblin King",power:90,reward:700},
+  {id:"b2",name:"Forest Guardian",power:250,reward:2100},
+  {id:"b3",name:"Crypt Lord",power:600,reward:6200},
+  {id:"b4",name:"Frost Giant",power:1400,reward:16000},
+  {id:"b5",name:"Dragon Emperor",power:3200,reward:52000},
+  {id:"b6",name:"Void Sovereign",power:7500,reward:180000}
+];
+
+const businesses = [
+  {id:"stall",name:"Market Stall",cost:1000,income:4},
+  {id:"tavern",name:"Tavern",cost:7500,income:18},
+  {id:"shop",name:"Magic Emporium",cost:38000,income:75},
+  {id:"guild",name:"Adventurer Guild",cost:180000,income:280},
+  {id:"bank",name:"Royal Bank",cost:850000,income:1100}
+];
+
+let state = {
+  gold:0, total:0, career:0,
+  wives:{}, favorite:null, married:null,
+  pets:{}, activePets:[],
+  left:null, right:null, armour:null,
+  house:-1, businesses:{},
+  name:"Hero", skin:0, hair:0, outfit:0,
+  story:0, prestige:0
+};
+
+function format(n){return n>=1e6?(n/1e6).toFixed(1)+"M":n>=1e3?(n/1e3).toFixed(1)+"K":Math.floor(n)}
+
+function calcPower(){
+  let p = 14 + state.career*9 + state.prestige*18;
+  if(state.left) p += weapons.find(w=>w.id===state.left)?.power||0;
+  if(state.right) p += weapons.find(w=>w.id===state.right)?.power||0;
+  for(const wid in state.wives){
+    const w = wives.find(x=>x.id===wid);
+    if(w && w.buffType==="power") p += state.wives[wid].lvl * w.buffValue * 45;
+  }
+  return Math.floor(p);
+}
+
+function getIncome(){
+  let m = 1 + state.prestige*0.16;
+  if(state.house>=0) m *= houses[state.house].buff;
+  for(const id of state.activePets){
+    const pt = pets.find(x=>x.id===id);
+    if(pt) m += pt.buff * (state.pets[id]?.lvl||1);
+  }
+  for(const wid in state.wives){
+    const w = wives.find(x=>x.id===wid);
+    if(w && w.buffType==="business") m += state.wives[wid].lvl * w.buffValue;
+  }
+  let biz = 0;
+  for(const id in state.businesses){
+    const b = businesses.find(x=>x.id===id);
+    if(b) biz += b.income;
+  }
+  return (1.4 + state.career*3.2) * m + biz;
+}
+
+function getTap(){
+  let t = 1.8 + state.career*0.8;
+  for(const wid in state.wives){
+    const w = wives.find(x=>x.id===wid);
+    if(w && w.buffType==="tap") t += state.wives[wid].lvl * w.buffValue * 3.5;
+  }
+  return t * (1 + state.prestige*0.12);
+}
+
+function render(){
+  const skins = ["#ffdbac","#f5c6a5","#e8b98a","#d4a574","#c68642"];
+  const hairs = ["#2c1810","#4a2c1a","#1a1a1a","#e6c35c","#6d28d9"];
+  const outfits = ["#5b6ee1","#e11d48","#059669","#7c3aed","#1e293b","#d97706"];
+
+  document.getElementById("avHead").style.background = skins[state.skin];
+  document.getElementById("avHairBack").style.background = hairs[state.hair];
+  document.getElementById("avHairFront").style.background = hairs[state.hair];
+  document.getElementById("avBody").style.background = outfits[state.outfit];
+  document.querySelectorAll(".av-arm").forEach(a => a.style.background = skins[state.skin]);
+
+  // Weapons
+  const wl = document.getElementById("wepL"), wr = document.getElementById("wepR");
+  if(state.left){
+    wl.style.display = "block";
+    wl.className = "weapon l " + (weapons.find(w=>w.id===state.left)?.type || "sword");
+  } else wl.style.display = "none";
+  if(state.right){
+    wr.style.display = "block";
+    wr.className = "weapon r " + (weapons.find(w=>w.id===state.right)?.type || "staff");
+  } else wr.style.display = "none";
+
+  // Wife
+  const wEl = document.getElementById("wife");
+  if(state.favorite && state.wives[state.favorite]){
+    const w = wives.find(x=>x.id===state.favorite);
+    wEl.style.display = "block";
+    document.getElementById("wName").textContent = w.name + (state.married===state.favorite ? " ??" : "");
+    document.getElementById("wBody").style.background = w.color;
+    document.getElementById("wHair").style.background = "#4a2c1a";
+  } else wEl.style.display = "none";
+
+  // Pets
+  ["pet1","pet2","pet3"].forEach((id,i)=>{
+    document.getElementById(id).style.display = state.activePets[i] ? "block" : "none";
+  });
+
+  // House
+  if(state.house >= 0){
+    const h = houses[state.house];
+    document.querySelector(".house-body").style.background = h.color;
+    document.querySelector(".house-roof").style.background = h.roof;
+  }
+
+  document.getElementById("gold").textContent = format(state.gold) + " Gold";
+  document.getElementById("income").textContent = `+${format(getIncome())} / sec`;
+  document.getElementById("power").textContent = `Power: ${calcPower()}`;
+  document.getElementById("nametag").textContent = state.name;
+}
+
+function openTab(tab){
+  const popup = document.getElementById("popup");
+  const title = document.getElementById("pTitle");
+  const body = document.getElementById("pBody");
+  popup.classList.add("open");
+
+  if(tab === "wives"){
+    title.textContent = "Wives (25)";
+    let html = "";
+    wives.forEach(w => {
+      const d = state.wives[w.id];
+      if(!d){
+        html += `<div class="card"><div class="card-row"><div>${w.name}<br><small>${w.buffType} buff</small></div>
+          <button class="btn" ${state.gold>=w.cost&&state.career>=w.req?"":"disabled"} onclick="unlockWife('${w.id}')">${format(w.cost)}G</button></div></div>`;
+      } else {
+        const need = 48 + d.lvl * 30;
+        html += `<div class="card"><div class="card-row">
+          <div style="flex:1">${w.name} Lv.${d.lvl} ${state.favorite===w.id?"?":""} ${state.married===w.id?"??":""}
+            <div class="bar"><div class="bar-fill" style="width:${Math.min(100,d.int/need*100)}%"></div></div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:4px">
+            <button class="btn" onclick="gift('${w.id}')">Gift</button>
+            <button class="btn pink" onclick="startDate('${w.id}')">Date</button>
+            <button class="btn" onclick="setFav('${w.id}')">Fav</button>
+            ${d.lvl>=5 && state.married!==w.id ? `<button class="btn green" onclick="marry('${w.id}')">Marry</button>`:""}
+          </div>
+        </div></div>`;
+      }
+    });
+    body.innerHTML = html;
+  }
+
+  if(tab === "pets"){
+    title.textContent = "Pets (15)";
+    let html = "";
+    pets.forEach(p => {
+      const owned = !!state.pets[p.id];
+      html += `<div class="card"><div class="card-row"><div>${p.name}</div>
+        ${owned ? `<button class="btn" onclick="togglePet('${p.id}')">${state.activePets.includes(p.id)?"Remove":"Place"}</button>`
+          : `<button class="btn" ${state.gold>=p.cost?"":"disabled"} onclick="buyPet('${p.id}')">${format(p.cost)}G</button>`}
+      </div></div>`;
+    });
+    body.innerHTML = html;
+  }
+
+  if(tab === "hunts"){
+    title.textContent = "Monster Hunts";
+    body.innerHTML = `
+      <div class="card"><div class="card-row"><div>Goblin Cave</div><button class="btn" onclick="doHunt(70,150)">Hunt</button></div></div>
+      <div class="card"><div class="card-row"><div>Dark Forest</div><button class="btn" onclick="doHunt(180,420)">Hunt</button></div></div>
+      <div class="card"><div class="card-row"><div>Ancient Crypt</div><button class="btn" onclick="doHunt(480,1300)">Hunt</button></div></div>
+      <div class="card"><div class="card-row"><div>Dragon Ridge</div><button class="btn" onclick="doHunt(1300,3800)">Hunt</button></div></div>
+    `;
+  }
+
+  if(tab === "bosses"){
+    title.textContent = "Dungeon Bosses";
+    let html = `<p style="font-size:12px;color:#94a3b8;margin-bottom:10px">High Power required</p>`;
+    bosses.forEach(b => {
+      html += `<div class="card"><div class="card-row"><div>${b.name}<br><small>Need ~${b.power} Power</small></div>
+        <button class="btn" onclick="fightBoss('${b.id}')">Challenge</button></div></div>`;
+    });
+    body.innerHTML = html;
+  }
+
+  if(tab === "avatar"){
+    title.textContent = "Avatar & Gear";
+    body.innerHTML = `
+      <div class="card"><div class="card-row"><div>Name</div>
+        <input id="nm" value="${state.name}" style="background:#0f0a1a;border:1px solid #4c1d95;color:white;padding:6px;border-radius:6px;width:110px">
+        <button class="btn" onclick="state.name=document.getElementById('nm').value;render();save()">Save</button></div></div>
+      <div class="card"><div class="card-row"><div>Appearance</div>
+        <button class="btn" onclick="state.skin=(state.skin+1)%5;render()">Skin</button>
+        <button class="btn" onclick="state.hair=(state.hair+1)%5;render()">Hair</button>
+        <button class="btn" onclick="state.outfit=(state.outfit+1)%6;render()">Outfit</button></div></div>
+      <h3 style="margin:12px 0 6px">Weapons</h3>
+      <div style="max-height:200px;overflow-y:auto">
+        ${weapons.slice(0,15).map(w => `<div class="card"><div class="card-row"><div>${w.name}<br><small>+${w.power} Power</small></div>
+          <button class="btn" onclick="equipWep('${w.id}','left')">L</button>
+          <button class="btn" onclick="equipWep('${w.id}','right')">R</button></div></div>`).join("")}
+      </div>
+    `;
+  }
+
+  if(tab === "store"){
+    title.textContent = "Store & Prestige";
+    let html = `<h3 style="margin-bottom:8px">Businesses</h3>`;
+    businesses.forEach(b => {
+      html += `<div class="card"><div class="card-row"><div>${b.name}<br><small>+${b.income}/sec</small></div>
+        <button class="btn" ${state.businesses[b.id]?"disabled":""} onclick="buyBiz('${b.id}')">${state.businesses[b.id]?"Owned":format(b.cost)+"G"}</button></div></div>`;
+    });
+    html += `<h3 style="margin:14px 0 8px">Living Places (18)</h3>`;
+    houses.forEach((h,i) => {
+      html += `<div class="card"><div class="card-row"><div>${h.name}</div>
+        <button class="btn" ${state.house>=i?"disabled":""} onclick="buyHouse(${i})">${state.house>=i?"Owned":format(h.cost)+"G"}</button></div></div>`;
+    });
+    html += `<h3 style="margin:14px 0 8px">Prestige</h3>
+      <div class="card"><div class="card-row"><div>Level ${state.prestige}</div>
+        <button class="btn pink" onclick="doPrestige()">Reincarnate</button></div></div>`;
+    body.innerHTML = html;
+  }
+
+  if(tab === "story"){
+    title.textContent = "Main Story Quests";
+    const quests = [
+      {t:"Awaken in the new world", g:100},
+      {t:"Gather 500 gold", g:250},
+      {t:"Unlock your first companion", g:500},
+      {t:"Clear the Goblin Cave", g:900},
+      {t:"Reach higher rank", g:1600},
+      {t:"Defeat a dungeon boss", g:3500},
+      {t:"Own a real home", g:6000},
+      {t:"Marry your beloved", g:12000}
+    ];
+    let html = `<div class="card">Story Progress: ${state.story} / ${quests.length}</div>`;
+    quests.forEach((q,i) => {
+      const done = state.story > i;
+      html += `<div class="card"><div class="card-row"><div>${q.t}</div>
+        <button class="btn" ${done || state.story !== i ? "disabled" : ""} onclick="completeQuest(${i},${q.g})">${done ? "Done" : "Claim +"+format(q.g)}</button></div></div>`;
+    });
+    body.innerHTML = html;
+  }
+}
+
+function closeTab(){ document.getElementById("popup").classList.remove("open"); }
+
+function unlockWife(id){
+  const w = wives.find(x => x.id === id);
+  state.gold -= w.cost;
+  state.wives[id] = {lvl:1, int:0};
+  openTab("wives"); save();
+}
+function gift(id){
+  const d = state.wives[id];
+  const cost = 80 + d.lvl * 50;
+  if(state.gold < cost) return;
+  state.gold -= cost;
+  d.int += 20;
+  const need = 48 + d.lvl * 30;
+  if(d.int >= need){ d.int = 0; d.lvl++; }
+  openTab("wives"); save();
+}
+function setFav(id){ state.favorite = id; render(); openTab("wives"); save(); }
+function marry(id){ state.married = id; state.favorite = id; startRomance(id, true); save(); }
+function startDate(id){ startRomance(id, false); }
+
+function startRomance(id, isMarry){
+  const w = wives.find(x => x.id === id);
+  const rom = document.getElementById("romance");
+  document.getElementById("rText").textContent = isMarry ? `You married ${w.name}` : `A quiet moment with ${w.name}`;
+  rom.className = "romance show";
+  setTimeout(() => rom.classList.add("s2"), 800);
+  setTimeout(() => rom.classList.add("s3"), 1800);
+}
+function closeRomance(){ document.getElementById("romance").className = "romance"; render(); }
+
+function buyPet(id){
+  const p = pets.find(x => x.id === id);
+  state.gold -= p.cost;
+  state.pets[id] = {lvl:1};
+  openTab("pets"); save();
+}
+function togglePet(id){
+  if(state.activePets.includes(id)) state.activePets = state.activePets.filter(x => x !== id);
+  else if(state.activePets.length < 3) state.activePets.push(id);
+  render(); openTab("pets"); save();
+}
+
+function equipWep(id, hand){
+  const w = weapons.find(x => x.id === id);
+  if(state.gold < w.cost && !state.left && !state.right) return; // simplified ownership
+  if(hand === "left") state.left = id;
+  else state.right = id;
+  render(); openTab("avatar"); save();
+}
+
+function doHunt(need, reward){
+  if(calcPower() < need * 0.75) return alert("Too weak");
+  state.gold += reward;
+  alert(`+${format(reward)} Gold`);
+  closeTab(); render(); save();
+}
+function fightBoss(id){
+  const b = bosses.find(x => x.id === id);
+  if(calcPower() < b.power * 0.88) return alert(`Need more Power (you have ${calcPower()})`);
+  state.gold += b.reward;
+  alert(`Boss defeated!\n+${format(b.reward)} Gold`);
+  closeTab(); render(); save();
+}
+
+function buyBiz(id){
+  const b = businesses.find(x => x.id === id);
+  if(state.gold < b.cost) return;
+  state.gold -= b.cost;
+  state.businesses[id] = 1;
+  openTab("store"); save();
+}
+function buyHouse(i){
+  const h = houses[i];
+  if(state.gold < h.cost) return;
+  state.gold -= h.cost;
+  state.house = i;
+  openTab("store"); render(); save();
+}
+function doPrestige(){
+  if(!confirm("Reincarnate? You keep wives and prestige bonuses.")) return;
+  state.prestige++;
+  state.gold = 200;
+  state.career = 0;
+  state.house = -1;
+  state.businesses = {};
+  state.left = null;
+  state.right = null;
+  render(); closeTab(); save();
+}
+
+function completeQuest(i, g){
+  state.story++;
+  state.gold += g;
+  if(i === 2 && !state.wives["w0"]) state.wives["w0"] = {lvl:1, int:0};
+  openTab("story"); render(); save();
+}
+
+document.getElementById("tapBtn").onclick = () => {
+  state.gold += getTap();
+  render();
+  save();
+};
+document.getElementById("tapBtn").addEventListener("touchstart", e => {
+  e.preventDefault();
+  document.getElementById("tapBtn").onclick();
+}, {passive:false});
+
+setInterval(() => {
+  state.gold += getIncome();
+  render();
+}, 1000);
+
+function save(){ localStorage.setItem("isekaiAnime", JSON.stringify(state)); }
+function load(){ const s = localStorage.getItem("isekaiAnime"); if(s) Object.assign(state, JSON.parse(s)); }
+load();
+render();
+</script>
+</body>
+</html>
