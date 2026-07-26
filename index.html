@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Isekai Life Tycoon</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none}
+body{font-family:system-ui,-apple-system,sans-serif;background:#0b0614;color:#e2e8f0;min-height:100vh;padding:8px;overflow-x:hidden}
+.container{max-width:430px;margin:0 auto;position:relative}
+
+/* ===== ROMANCE SCENE OVERLAY ===== */
+.romance-overlay{
+  position:fixed;inset:0;background:rgba(0,0,0,0.85);
+  z-index:9999;display:none;align-items:center;justify-content:center;
+  flex-direction:column;
+}
+.romance-overlay.active{display:flex;animation:fadeIn 0.6s ease}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+
+.romance-stage{
+  position:relative;width:280px;height:280px;
+  display:flex;align-items:center;justify-content:center;
+}
+.romance-glow{
+  position:absolute;width:220px;height:220px;border-radius:50%;
+  background:radial-gradient(circle,rgba(236,72,153,0.35) 0%,transparent 70%);
+  animation:pulseGlow 2.5s ease-in-out infinite;
+}
+@keyframes pulseGlow{0%,100%{transform:scale(1);opacity:0.6}50%{transform:scale(1.15);opacity:1}}
+
+.romance-char{
+  position:absolute;font-size:70px;
+  filter:drop-shadow(0 0 12px rgba(255,255,255,0.4));
+  transition:all 1.2s cubic-bezier(0.34,1.56,0.64,1);
+}
+.romance-hero{left:30px;bottom:40px;z-index:2}
+.romance-partner{right:30px;bottom:40px;z-index:2}
+
+.romance-overlay.active .romance-hero{
+  left:70px;transform:scale(1.1);
+}
+.romance-overlay.active .romance-partner{
+  right:70px;transform:scale(1.1);
+}
+
+.floating-hearts{
+  position:absolute;inset:0;pointer-events:none;overflow:hidden;
+}
+.f-heart{
+  position:absolute;font-size:22px;opacity:0;
+  animation:floatHeart 3s ease-in forwards;
+}
+@keyframes floatHeart{
+  0%{transform:translateY(100%) scale(0.5);opacity:0}
+  20%{opacity:1}
+  100%{transform:translateY(-120px) scale(1.2);opacity:0}
+}
+
+.romance-text{
+  margin-top:20px;font-size:16px;font-weight:600;color:#f9a8d4;
+  text-shadow:0 0 10px rgba(236,72,153,0.8);
+  opacity:0;animation:textFade 1s 0.8s forwards;
+}
+@keyframes textFade{to{opacity:1}}
+
+.romance-close{
+  margin-top:25px;padding:10px 28px;background:linear-gradient(135deg,#ec4899,#be185d);
+  border:none;border-radius:30px;color:white;font-weight:700;font-size:14px;
+  opacity:0;animation:textFade 0.6s 1.8s forwards;
+}
+
+/* Rest of existing styles (kept short for focus) */
+.house-bg{position:absolute;top:0;left:0;width:100%;height:200px;display:flex;align-items:center;justify-content:center;font-size:120px;opacity:0.18;z-index:0;pointer-events:none}
+.avatar-stage{position:relative;z-index:5;width:100%;height:190px;display:flex;justify-content:center;align-items:flex-end}
+.character{position:relative;width:85px;height:135px;animation:idleBob 2.5s ease-in-out infinite;z-index:10}
+@keyframes idleBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+.character.tapped{animation:jumpTap 0.4s ease}
+@keyframes jumpTap{0%{transform:translateY(0)}40%{transform:translateY(-18px)}100%{transform:translateY(0)}}
+.char-head{position:absolute;top:0;left:50%;transform:translateX(-50%);width:48px;height:48px;border-radius:50%;background:var(--skin);z-index:5}
+.char-hair{position:absolute;top:-11px;left:50%;transform:translateX(-50%);width:58px;height:30px;border-radius:50% 50% 0 0;background:var(--hair);z-index:6}
+.char-eyes{position:absolute;top:18px;width:100%;display:flex;justify-content:center;gap:9px;z-index:7}
+.eye{width:7px;height:9px;background:#111;border-radius:50%;animation:blink 4s infinite}
+.eye:nth-child(2){animation-delay:0.1s}
+@keyframes blink{0%,90%,100%{transform:scaleY(1)}93%{transform:scaleY(0.1)}}
+.char-body{position:absolute;top:42px;left:50%;transform:translateX(-50%);width:40px;height:42px;border-radius:10px;background:var(--outfit);z-index:4}
+.char-arm{position:absolute;top:46px;width:10px;height:30px;border-radius:6px;background:var(--skin);z-index:3}
+.char-arm.left{left:5px}.char-arm.right{right:5px}
+.char-leg{position:absolute;bottom:0;width:11px;height:26px;border-radius:4px;background:#1a1a1a}
+.char-leg.left{left:19px}.char-leg.right{right:19px}
+.weapon{position:absolute;font-size:22px;z-index:12}
+.weapon.left{left:-14px;top:44px}.weapon.right{right:-14px;top:44px}
+.partner-side{position:absolute;bottom:6px;left:50%;transform:translateX(-100px);font-size:42px;z-index:8;animation:partnerBob 2.8s ease-in-out infinite}
+@keyframes partnerBob{0%,100%{transform:translateX(-100px) translateY(0)}50%{transform:translateX(-100px) translateY(-5px)}}
+.pet{position:absolute;bottom:4px;font-size:28px;z-index:9;animation:petHop 1.6s ease-in-out infinite}
+.pet.left{left:12px}.pet.right{right:12px}
+@keyframes petHop{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
+
+.nametag{background:#1e1b4b;border:2px solid #8b5cf6;border-radius:16px;padding:2px 12px;font-size:14px;font-weight:700;display:inline-block}
+.money{font-size:22px;font-weight:800;color:#fbbf24}
+.tap-btn{width:100%;height:72px;border:none;border-radius:14px;color:white;font-size:20px;font-weight:800;background:linear-gradient(135deg,#7c3aed,#4c1d95);margin:6px 0}
+.section{background:#1e1b4b;border-radius:12px;padding:9px;margin-bottom:8px}
+.section h3{font-size:13px;margin-bottom:5px;color:#c4b5fd}
+.shop-item{background:#0c0618;border-radius:9px;padding:7px;margin-bottom:5px;display:flex;justify-content:space-between;align-items:center;gap:5px;font-size:12px}
+button{background:#7c3aed;color:white;border:none;padding:5px 9px;border-radius:6px;font-weight:600;font-size:11px}
+button:disabled{opacity:0.4}
+.tabs{display:flex;gap:3px;margin-bottom:7px;overflow-x:auto}
+.tab{padding:5px 8px;background:#1e1b4b;border-radius:10px;font-size:10px;border:2px solid transparent}
+.tab.active{border-color:#8b5cf6;background:#4c1d95}
+.intimacy{height:5px;background:#312e81;border-radius:3px;margin-top:2px;overflow:hidden}
+.intimacy-fill{height:100%;background:linear-gradient(90deg,#ec4899,#f472b6)}
+.dialogue-box{background:#0f0a1e;border:1px solid #7c3aed;border-radius:10px;padding:10px;margin:6px 0;font-size:12px;line-height:1.4}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="house-bg" id="houseBg">???</div>
+
+  <div style="text-align:center;position:relative;z-index:5">
+    <div class="avatar-stage">
+      <div class="partner-side" id="partnerSide" style="display:none">??</div>
+      <div class="pet left" id="petLeft" style="display:none">??</div>
+      <div class="pet right" id="petRight" style="display:none">??</div>
+      <div class="character" id="character">
+        <div class="char-hair" id="charHair"></div>
+        <div class="char-head" id="charHead">
+          <div class="char-eyes"><div class="eye"></div><div class="eye"></div></div>
+        </div>
+        <div class="char-body" id="charBody"></div>
+        <div class="char-arm left"></div>
+        <div class="char-arm right"></div>
+        <div class="char-leg left"></div>
+        <div class="char-leg right"></div>
+        <div class="weapon left" id="weaponLeft"></div>
+        <div class="weapon right" id="weaponRight"></div>
+      </div>
+    </div>
+    <div class="nametag" id="nametag">Hero</div>
+    <div class="money" id="money">0 Gold</div>
+  </div>
+
+  <button class="tap-btn" id="tapBtn">GATHER GOLD</button>
+
+  <div class="tabs">
+    <div class="tab active" data-tab="main">Main</div>
+    <div class="tab" data-tab="partners">Partners</div>
+    <div class="tab" data-tab="dates">Dates</div>
+    <div class="tab" data-tab="more">More</div>
+  </div>
+
+  <div id="mainTab">
+    <div class="section">
+      <h3>Story</h3>
+      <div class="dialogue-box" id="storyDialogue">You wake up in a fantasy world...</div>
+      <button onclick="nextStory()" style="width:100%;margin-top:5px">Continue</button>
+    </div>
+  </div>
+
+  <div id="partnersTab" style="display:none">
+    <div class="section"><h3>Partners</h3><div id="partnerList"></div></div>
+  </div>
+
+  <div id="datesTab" style="display:none">
+    <div class="section">
+      <h3>Date & Romance</h3>
+      <div id="dateSelect"></div>
+      <button id="startDateBtn" style="width:100%;margin-top:8px" disabled>Start Date ? Romance Scene</button>
+    </div>
+  </div>
+
+  <div id="moreTab" style="display:none">
+    <div class="section"><h3>Housing</h3><div id="housingList"></div></div>
+    <div class="section"><h3>Pets</h3><div id="petList"></div></div>
+  </div>
+</div>
+
+<!-- ROMANCE SCENE OVERLAY -->
+<div class="romance-overlay" id="romanceOverlay">
+  <div class="romance-stage">
+    <div class="romance-glow"></div>
+    <div class="floating-hearts" id="heartsContainer"></div>
+    <div class="romance-char romance-hero" id="romanceHero">??</div>
+    <div class="romance-char romance-partner" id="romancePartner">??</div>
+  </div>
+  <div class="romance-text" id="romanceText">A special moment...</div>
+  <button class="romance-close" onclick="closeRomance()">Continue</button>
+</div>
+
+<script>
+const partnersData = [
+  {id:"lily",name:"Lily",emoji:"??",cost:200,lines:["I feel so close to you...","This feels like a dream."]},
+  {id:"aria",name:"Aria",emoji:"?????",cost:600,lines:["The forest is quiet when I'm with you.","Don't let go."]},
+  {id:"mira",name:"Mira",emoji:"?????",cost:1200,lines:["Magic feels stronger near you.","Stay with me."]},
+  {id:"seraph",name:"Seraphina",emoji:"??",cost:3000,lines:["Your light warms me.","I was meant to find you."]},
+  {id:"nyx",name:"Nyx",emoji:"?????",cost:5000,lines:["The night belongs to us.","You're mine."]},
+  {id:"freya",name:"Freya",emoji:"??",cost:9000,lines:["My heart is racing...","Closer."]},
+  {id:"luna",name:"Luna",emoji:"??",cost:15000,lines:["Under the moonlight...","I only want you."]},
+  {id:"isabella",name:"Isabella",emoji:"??",cost:30000,lines:["A queen needs her king.","Kiss me."]},
+  {id:"raven",name:"Raven",emoji:"??",cost:45000,lines:["Even darkness softens for you.","Don't leave."]},
+  {id:"aurora",name:"Aurora",emoji:"?",cost:80000,lines:["You outshine the stars.","Hold me."]},
+  {id:"valeria",name:"Valeria",emoji:"??",cost:120000,lines:["Strength and tenderness...","I yield."]},
+  {id:"celeste",name:"Celeste",emoji:"??",cost:250000,lines:["Eternal moments with you.","Forever."]},
+  {id:"hilda",name:"Hilda",emoji:"???",cost:1800,lines:["I'll protect this feeling.","You're safe."]},
+  {id:"sakura",name:"Sakura",emoji:"??",cost:2500,lines:["Petals fall like my heart.","Beautiful."]},
+  {id:"iris",name:"Iris",emoji:"??",cost:7000,lines:["You make me bloom.","Softly."]},
+  {id:"nova",name:"Nova",emoji:"??",cost:11000,lines:["Burn with me.","Intense."]},
+  {id:"sylph",name:"Sylph",emoji:"???",cost:16000,lines:["Breathless...","Fly with me."]},
+  {id:"ember",name:"Ember",emoji:"??",cost:35000,lines:["Hotter than fire.","Burn."]},
+  {id:"frost",name:"Frost",emoji:"??",cost:28000,lines:["You melt me.","Warm."]},
+  {id:"jade",name:"Jade",emoji:"??",cost:42000,lines:["Precious moments.","Mine."]},
+  {id:"shadow",name:"Shadow",emoji:"??",cost:38000,lines:["Only you see the real me.","Stay."]},
+  {id:"pearl",name:"Pearl",emoji:"??",cost:90000,lines:["Deep in my heart.","Dive."]},
+  {id:"storm",name:"Storm",emoji:"?",cost:150000,lines:["Electrifying.","Shock me."]},
+  {id:"velvet",name:"Velvet",emoji:"??",cost:110000,lines:["Soft and endless.","Dance."]},
+  {id:"eternal",name:"Eternal",emoji:"??",cost:300000,lines:["Time stops for us.","Always."]}
+];
+
+const houses = [
+  {name:"Hay Bed",emoji:"???",cost:40},
+  {name:"Inn",emoji:"???",cost:300},
+  {name:"Cottage",emoji:"??",cost:2000},
+  {name:"Manor",emoji:"??",cost:15000},
+  {name:"Castle",emoji:"??",cost:120000},
+  {name:"Sky Palace",emoji:"??",cost:900000}
+];
+
+const petsData = [
+  {id:"slime",name:"Slime",emoji:"??",cost:150},
+  {id:"fairy",name:"Fairy",emoji:"??",cost:900},
+  {id:"wolf",name:"Wolf",emoji:"??",cost:5500}
+];
+
+let state = {
+  name:"Hero", gold:0, totalEarned:0, career:0,
+  leftWeapon:"none", rightWeapon:"none",
+  housing:-1, activeHouse:-1,
+  pets:{}, partners:{}, favoritePartner:null,
+  storyIndex:0, age:18, days:1,
+  prestige:0, lastSave:Date.now(),
+  avatar:{race:0,hair:0,outfit:0},
+  selectedDate:null
+};
+
+function format(n){if(n>=1e6)return(n/1e6).toFixed(1)+"M";if(n>=1e3)return(n/1e3).toFixed(1)+"K";return Math.floor(n)}
+
+function renderAvatar(){
+  const race = [{skin:"#f5c6a5"},{skin:"#f5d0b5"},{skin:"#6b4e71"},{skin:"#8b4557"},{skin:"#e8b98a"},{skin:"#ffe4c9"}][state.avatar.race];
+  document.getElementById("charHead").style.background = race.skin;
+  document.getElementById("charHair").style.background = ["#1a1a1a","#5c4033","#e6c35c","#f0f0f0","#a63d40","#3b82f6","#7c3aed"][state.avatar.hair];
+  document.getElementById("charBody").style.background = ["#6b7280","#3b82f6","#ef4444","#22c55e","#8b5cf6","#eab308","#1f2937"][state.avatar.outfit];
+
+  const fav = state.favoritePartner;
+  const pel = document.getElementById("partnerSide");
+  if(fav && state.partners[fav]){
+    pel.textContent = partnersData.find(p=>p.id===fav).emoji;
+    pel.style.display = "block";
+  } else pel.style.display = "none";
+
+  document.getElementById("houseBg").textContent = state.activeHouse>=0 ? houses[state.activeHouse].emoji : "???";
+}
+
+function playRomanceScene(partnerId){
+  const pd = partnersData.find(p => p.id === partnerId);
+  const overlay = document.getElementById("romanceOverlay");
+  const hero = document.getElementById("romanceHero");
+  const partner = document.getElementById("romancePartner");
+  const text = document.getElementById("romanceText");
+  const hearts = document.getElementById("heartsContainer");
+
+  hero.textContent = "??";
+  partner.textContent = pd.emoji;
+  text.textContent = pd.lines[Math.floor(Math.random()*pd.lines.length)];
+
+  // Create floating hearts
+  hearts.innerHTML = "";
+  for(let i=0;i<12;i++){
+    const h = document.createElement("div");
+    h.className = "f-heart";
+    h.textContent = ["??","??","??","??"][Math.floor(Math.random()*4)];
+    h.style.left = Math.random()*100 + "%";
+    h.style.animationDelay = (Math.random()*1.5) + "s";
+    hearts.appendChild(h);
+  }
+
+  overlay.classList.add("active");
+}
+
+function closeRomance(){
+  document.getElementById("romanceOverlay").classList.remove("active");
+}
+
+function startDate(){
+  if(!state.selectedDate) return;
+  // Simple success for demo + play romance
+  const p = state.partners[state.selectedDate];
+  p.intimacy = (p.intimacy||0) + 15;
+  if(p.intimacy >= 30 + (p.level||1)*20){
+    p.intimacy = 0;
+    p.level = (p.level||1) + 1;
+  }
+  playRomanceScene(state.selectedDate);
+  updateUI();
+  save();
+}
+
+function unlockPartner(id){
+  const pd = partnersData.find(p=>p.id===id);
+  if(state.partners[id]) return;
+  if(state.gold < pd.cost) return alert("Not enough gold");
+  state.gold -= pd.cost;
+  state.partners[id] = {level:1, intimacy:0};
+  alert(pd.name + " joined you!");
+  updateUI(); save();
+}
+
+function setFavorite(id){
+  state.favoritePartner = id;
+  renderAvatar(); updateUI(); save();
+}
+
+function gift(id){
+  const p = state.partners[id];
+  if(!p) return;
+  const cost = 50 + (p.level||1)*30;
+  if(state.gold < cost) return;
+  state.gold -= cost;
+  p.intimacy += 12;
+  updateUI(); save();
+}
+
+function tap(){
+  const power = 1 + state.career;
+  state.gold += power;
+  state.totalEarned += power;
+  document.getElementById("character").classList.remove("tapped");
+  void document.getElementById("character").offsetWidth;
+  document.getElementById("character").classList.add("tapped");
+  updateUI(); save();
+}
+
+function updateUI(){
+  document.getElementById("money").textContent = format(state.gold) + " Gold";
+  document.getElementById("nametag").textContent = state.name;
+  renderAvatar();
+
+  let html = "";
+  partnersData.forEach(pd => {
+    const p = state.partners[pd.id];
+    if(!p){
+      html += `<div class="shop-item"><div>${pd.emoji} ${pd.name}</div>
+        <button ${state.gold>=pd.cost?"":"disabled"} onclick="unlockPartner('${pd.id}')">${format(pd.cost)}G</button></div>`;
+    } else {
+      const fav = state.favoritePartner === pd.id;
+      html += `<div class="shop-item">
+        <div>${pd.emoji} ${pd.name} Lv.${p.level||1}
+          <div class="intimacy"><div class="intimacy-fill" style="width:${Math.min(100,(p.intimacy||0)/40*100)}%"></div></div>
+        </div>
+        <div>
+          <button onclick="gift('${pd.id}')">Gift</button>
+          <button onclick="setFavorite('${pd.id}')" style="${fav?'background:#ec4899':''}">${fav?'?':'Fav'}</button>
+        </div>
+      </div>`;
+    }
+  });
+  document.getElementById("partnerList").innerHTML = html;
+
+  // Date select
+  let dhtml = "";
+  partnersData.forEach(pd => {
+    if(state.partners[pd.id]){
+      dhtml += `<button style="margin:3px;padding:6px 10px;border-radius:8px;border:none;background:${state.selectedDate===pd.id?'#ec4899':'#312e81'};color:white" 
+        onclick="state.selectedDate='${pd.id}';document.getElementById('startDateBtn').disabled=false;updateUI()">
+        ${pd.emoji} ${pd.name}</button>`;
+    }
+  });
+  document.getElementById("dateSelect").innerHTML = dhtml || "<p style='font-size:12px'>Unlock partners first</p>";
+
+  // Housing & Pets simplified
+  let h = "";
+  houses.forEach((hs,i)=>{
+    h += `<div class="shop-item"><div>${hs.emoji} ${hs.name}</div>
+      <button ${state.gold>=hs.cost&&state.housing===i-1?"":"disabled"} onclick="state.gold-=${hs.cost};state.housing=${i};state.activeHouse=${i};renderAvatar();updateUI();save()">${format(hs.cost)}G</button></div>`;
+  });
+  document.getElementById("housingList").innerHTML = h;
+
+  let p = "";
+  petsData.forEach(pt=>{
+    p += `<div class="shop-item"><div>${pt.emoji} ${pt.name}</div>
+      <button ${state.pets[pt.id]? "disabled" : state.gold>=pt.cost?"":"disabled"} onclick="state.gold-=${pt.cost};state.pets['${pt.id}']={level:1};renderAvatar();updateUI();save()">${state.pets[pt.id]?"Owned":format(pt.cost)+"G"}</button></div>`;
+  });
+  document.getElementById("petList").innerHTML = p;
+}
+
+document.getElementById("tapBtn").onclick = tap;
+document.getElementById("startDateBtn").onclick = startDate;
+
+document.querySelectorAll(".tab").forEach(t=>{
+  t.onclick = ()=>{
+    document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));
+    t.classList.add("active");
+    ["main","partners","dates","more"].forEach(n=>{
+      document.getElementById(n+"Tab").style.display = t.dataset.tab===n ? "block" : "none";
+    });
+  };
+});
+
+function save(){localStorage.setItem("isekaiRomance",JSON.stringify(state))}
+function load(){const s=localStorage.getItem("isekaiRomance");if(s)Object.assign(state,JSON.parse(s))}
+load();
+renderAvatar();
+updateUI();
+
+// Auto income
+setInterval(()=>{
+  state.gold += 1 + state.career;
+  updateUI();
+},8000);
+</script>
+</body>
+</html>
