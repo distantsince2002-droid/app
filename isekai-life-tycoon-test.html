@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Isekai Life Tycoon – Test Build</title>
+<style>
+  :root {
+    --bg: #0f0f1a;
+    --card: #1a1a2e;
+    --accent: #c77dff;
+    --text: #eee;
+    --muted: #aaa;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: system-ui, -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding-bottom: 80px;
+  }
+  header {
+    background: #16162a;
+    padding: 12px 16px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: center;
+    border-bottom: 2px solid var(--accent);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .stat { font-size: 14px; }
+  .stat b { color: var(--accent); }
+  #tapBtn {
+    background: linear-gradient(135deg, #c77dff, #9b59b6);
+    border: none;
+    color: white;
+    font-size: 18px;
+    font-weight: bold;
+    padding: 14px 28px;
+    border-radius: 12px;
+    cursor: pointer;
+    box-shadow: 0 4px 15px #c77dff55;
+  }
+  #tapBtn:active { transform: scale(0.96); }
+  nav {
+    display: flex;
+    overflow-x: auto;
+    gap: 6px;
+    padding: 10px;
+    background: #12122a;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 100;
+  }
+  .navBtn {
+    background: #222;
+    border: 1px solid #444;
+    color: #ccc;
+    padding: 8px 14px;
+    border-radius: 8px;
+    white-space: nowrap;
+    cursor: pointer;
+  }
+  .navBtn.active { background: var(--accent); color: #000; font-weight: bold; }
+  .panel {
+    display: none;
+    padding: 16px;
+    max-width: 900px;
+    margin: 0 auto;
+  }
+  .panel.active { display: block; }
+  .card {
+    background: var(--card);
+    border: 1px solid #333;
+    border-radius: 12px;
+    padding: 14px;
+    margin-bottom: 12px;
+  }
+  .card.equipped { border-color: var(--accent); }
