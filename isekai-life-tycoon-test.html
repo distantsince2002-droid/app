@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Isekai Life Tycoon – Full Test Build</title>
+<style>
+  :root{--bg:#0f0f1a;--card:#1a1a2e;--accent:#c77dff;--text:#eee;--muted:#aaa}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;padding-bottom:80px}
+  header{background:#16162a;padding:10px 14px;display:flex;flex-wrap:wrap;gap:10px;align-items:center;border-bottom:2px solid var(--accent);position:sticky;top:0;z-index:100}
+  .stat{font-size:13px}.stat b{color:var(--accent)}
+  #tapBtn{background:linear-gradient(135deg,#c77dff,#9b59b6);border:none;color:#fff;font-size:17px;font-weight:700;padding:12px 24px;border-radius:12px;cursor:pointer}
+  nav{display:flex;overflow-x:auto;gap:6px;padding:8px;background:#12122a;position:fixed;bottom:0;left:0;right:0;z-index:100}
+  .navBtn{background:#222;border:1px solid #444;color:#ccc;padding:7px 12px;border-radius:8px;white-space:nowrap;cursor:pointer;font-size:13px}
+  .navBtn.active{background:var(--accent);color:#000;font-weight:700}
+  .panel{display:none;padding:14px;max-width:960px;margin:0 auto}
+  .panel.active{display:block}
+  .card{background:var(--card);border:1px solid #333;border-radius:12px;padding:12px;margin-bottom:10px}
+  .card.equipped{border-color:var(--accent)}.card.fav{border-color:gold}
+  .btn{background:var(--accent);border:none;color:#000;padding:7px 12px;border-radius:8px;cursor:pointer;font-weight:600;margin:3px}
+  .btn.secondary{background:#444;color:#fff}.btn:disabled{opacity:.4}
+  .bar{background:#333;height:9px;border-radius:5px;overflow:hidden;margin:5px 0}
+  .barFill{height:100%;background:linear-gradient(90deg,#c77dff,#9b59b6)}
+  .small{font-size:12px;color:var(--muted)}
+  .flex-row{display:flex;gap:10px;align-items:flex-start}
+  .portrait{width:72px;height:96px;object-fit:cover;border-radius:10px;border:2px solid var(--accent);background:#222;flex-shrink:0}
+  .pet-portrait{width:64px;height:64px;object-fit:cover;border-radius:10px;background:#222;flex-shrink:0}
+  .hero-portrait{width:46px;height:60px;object-fit:cover;border-radius:8px;border:2px solid var(--accent);cursor:pointer}
+  .hero-portrait.large{width:130px;height:170px;border-radius:12px}
+  .hero-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:12px;margin-top:16px}
+  .hero-card{background:#222;border:2px solid #444;border-radius:12px;padding:10px;text-align:center;cursor:pointer;transition:.2s}
+  .hero-card:hover{border-color:var(--accent)}
+  .hero-card.selected{border-color:gold;box-shadow:0 0 12px gold}
+  .hero-card.locked{opacity:.4;filter:grayscale(.8);cursor:not-allowed}
+  .hero-card img{width:100%;height:150px;object-fit:cover;border-radius:8px;margin-bottom:6px}
+  .modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:9999;align-items:center;justify-content:center;padding:16px}
+  .modal.show{display:flex}
+  .modal-content{background:#1a1a2e;border:2px solid var(--accent);border-radius:16px;max-width:700px;width:100%;padding:20px;max-height:90vh;overflow-y:auto}
+  .close{float:right;background:none;border:none;color:#fff;font-size:22px;cursor:pointer}
+  h2,h3{color:var(--accent);margin-bottom:8px}
+  #toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#222;color:#fff;padding:10px 20px;border-radius:8px;z-index:9999;opacity:0;transition:opacity .3s;pointer-events:none}
+</style>
+</head>
+<body>
+
+<header>
+  <img id="currentHeroImg" class="hero-portrait" src="" title="Click to change hero" onclick="openHeroSelect(false)">
+  <div class="stat">?? <b id="money">0</b></div>
+  <div class="stat">?? <b id="year">1</b></div>
+  <div class="stat">?? <b id="life">100</b></div>
+  <div class="stat">?? <b id="kibble">0</b></div>
+  <div class="stat">? <b id="prestige">0</b></div>
+  <div class="stat">?? <b id="pp">0</b></div>
+  <div class="stat" id="incomeText">+0.5/s</div>
+  <button id="tapBtn">TAP!</button>
+</header>
+
+<div id="panel-main" class="panel active">
+  <div style="text-align:center;padding:30px 16px">
+    <h2>Isekai Life Tycoon</h2>
+    <p class="small">Full Test Build – All Images</p>
+    <img id="mainHeroImg" class="hero-portrait large" src="" style="margin:16px auto;display:block">
+    <p id="currentHeroName" style="font-size:18px;color:var(--accent)"></p>
+    <p style="margin-top:12px">Tap to earn gold. Prestige to unlock new Heroes one by one.</p>
+  </div>
+</div>
+
+<div id="panel-companions" class="panel"><h2>Companions (Wives)</h2><div id="wivesList"></div></div>
+<div id="panel-tames" class="panel"><h2>Tames (Pets)</h2><div id="petsList"></div></div>
+<div id="panel-prestige" class="panel">
+  <h2>Reincarnation</h2>
+  <p class="small">Each prestige unlocks the next Hero.</p>
+  <button class="btn" onclick="doPrestige()">Prestige Now (Test)</button>
+  <button class="btn secondary" onclick="openHeroSelect(false)">Change Hero</button>
+</div>
+<div id="panel-dungeon" class="panel"><h2>Dungeon</h2><p class="small">Coming soon</p></div>
+<div id="panel-story" class="panel"><h2>Story</h2><p class="small">Coming soon</p></div>
+
+<nav>
+  <button class="navBtn active" data-tab="main" onclick="showTab('main')">Home</button>
+  <button class="navBtn" data-tab="companions" onclick="showTab('companions')">Wives</button>
+  <button class="navBtn" data-tab="tames" onclick="showTab('tames')">Pets</button>
+  <button class="navBtn" data-tab="prestige" onclick="showTab('prestige')">Prestige</button>
+  <button class="navBtn" data-tab="dungeon" onclick="showTab('dungeon')">Dungeon</button>
+  <button class="navBtn" data-tab="story" onclick="showTab('story')">Story</button>
+</nav>
+
+<!-- Hero Select Modal -->
+<div id="heroModal" class="modal">
+  <div class="modal-content">
+    <button class="close" onclick="closeHeroSelect()">×</button>
+    <h2 id="heroModalTitle">Choose Your Hero</h2>
+    <p class="small" id="heroModalDesc"></p>
+    <div class="hero-grid" id="heroGrid"></div>
+    <div style="text-align:right;margin-top:16px">
+      <button class="btn" onclick="confirmHeroSelection()">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+/* ============================================================
+   DATA – Full with GitHub raw images
+============================================================ */
+const HEROES = [
+  {id:0,name:"Young Adventurer",img:"https://raw.githubusercontent.com/distantsince2002-droid/isekai-images/e65df7aca6de0c5908f7fe58a5b93e84a4c1675b/Young%20Adventurer.jpg",unlock:{prestige:0}},
+  {id:1,name:"Void Walker",img:"https://raw.githubusercontent.com/distantsince2002-droid/isekai-images/e65df7aca6de0c5908f7fe58a5b93e84a4c1675b/Void%20Walker.jpg",unlock:{prestige:1}},
+  {id:2,name:"The Student",img:"https://raw.githubusercontent.com/distantsince2002-droid/isekai-images/e65df7aca6de0c5908f7fe58a5b93e84a4c1675b/The%20Student.jpg",unlock:{prestige:2}},
+  {id:3,name:"Shadow Knight",img:"https://raw.githubusercontent.com/distantsince2002-droid/isekai-images/e65df7aca6de0c5908f7fe58a5b93e84a4c1675b/Shadow%20Knight.jpg",unlock:{prestige:3}},
+  {id:4,name:"Noble Mage",img:"https://raw.githubusercontent.com/distantsince2002-droid/isekai-images/e65df7aca6de0c5908f7fe58a5b93e84a4c1675b/Noble%20Mage.jpg",unlock:{prestige:4}},
+  {id:5,name:"Holy Paladin",img:"https://raw.githubusercontent.com/distantsince2002-droid/isekai-images/e65df7aca6de0c5908f7fe58a5b93e84a4c1675b/Holy%20Paladin.jpg",unlock:{prestige:5}},
+  {id:6,name:"Forest Ranger",img:"https://raw.githubusercontent.com/distantsince2002-droid/isekai-images/e65df7aca6de0c5908f7fe58a5b93e84a4c1675b/Forest%20Ranger.jpg",unlock:{prestige:6}},
+  {id:7,name:"Eternal Sage",img:"https://raw.githubusercontent.com/distantsince2002-droid/isekai-images/e65df7aca6de0c5908f7fe58a5b93e84a4c1675b/Eternal%20Sage.jpg",unlock:{prestige:7}},
+  {id:8,name:"Dragon Blood",img:"https://raw.githubusercontent.com/distantsince2002-droid/isekai-images/e65df7aca6de0c5908f7fe58a5b93e84a4c1675b/Dragon%20Blood.jpg",unlock:{prestige:8}},
+  {id:9,name:"Beast Tamer",img:"https://raw.githubusercontent.com/distantsince2002-droid/isekai-images/e65df7aca6de0c5908f7fe58a5b93e84a4c1675b/Beast%20Tamer.jpg",unlock:{prestige:9}}
+];
+
+const PETS = [
+  {id:0,name:"Zephyr",type:"Wind Owl",unlock:{start:true},forms:[
+    {name:"Zephyr",buff:"Speed +12%",img:"https://raw.githubusercontent.com/distantsince2002-droid/isekai-images/ccf1f119eb3c78497930f1f15172681b443a0f1b/Zephyr/Zephyr%20(Wind%20Owl)%20.jpg"},
+    {name:"Gale Owl",buff:"Speed +18%",img:"https://raw.githubusercontent.com/distantsince2002-droid/isekai-images/ccf1f119eb3c78497930f1f15172681b443a0f1b/Zephyr/Zephyr%20-%201st%20Evolution.jpg"},
+    {name:"Tempest Owl",buff:"Speed +25%, Tap +8%",img:"https://raw.githubusercontent.com/distantsince2002-droid/isekai-images/ccf1f119eb3c78497930f1f15172681b443a0f1b/Zephyr/Zephyr%20-%202nd%20Evolution.jpg"},
+    {name:"Aether Sovereign",buff:"Speed +35%, Tap +15%",img:"https://raw.githubusercontent.com/distantsince2002-droid/isekai-images/ccf1f119eb3c78497930f1f15172681b443a0f1b/Zephyr/Zephyr%20-%203rd%20Evolution.jpg"}
+  ]},
+  {id:1,name:"Spark",type:"Lightning Drake",unlock:{money:5000},forms:[
+    {name:"Spark",buff:"Tap +14%",img:"https://raw.githubusercontent.com/distantsince2002-droid/isekai-images/ccf1f119eb3c78497930f1f15172681b443a0f1b/Spark/Spark%20(Lightning%20Drake).jpg"},
+    {name:"Thunder Drake",buff:"Tap +20%",img:"https://raw.githubusercontent.com/distantsince2002-droid/isekai-images/ccf1f119eb3c78497930f1f15172681b443a0f1b/Spark/Spark%20-%201st%20Evolution.jpg"},
+    {name:"Volt Tyrant",buff:"Tap +28%, Atk +10%",img:"https://raw.githubusercontent.com/distantsince2002-droid/isekai-images/ccf1f119eb3c78497930f1f15172681b443a0f1b/Spark/Spark%20-%202nd%20Evolution.jpg"},
+    {name:"Celestial Thunder",buff:"Tap +40%, Atk +18%",img:"https://raw.githubusercontent.com/distantsince2002-droid/isekai-images/ccf1f119eb3c78497930f1f15172681b443a0f1b/Spark/Spark%20-%203rd%20Evolution.jpg"}
+  ]},
+  {id:2,name:"Shade",type:"Shadow Cat",unlock:{start:true},forms:[
+    {name:"Shade",buff:"Dungeon +11%",img:"https://raw.githubusercontent.com/distantsince2002-droid/isekai-images/ccf1f119eb3c78497930f1f15172681b443a0f1b/Shade/Shade%20(Shadow%20Cat).jpg"},
+    {name:"Night Stalker",buff:"Dungeon +17%",img:"https://raw.githubusercontent.com/distantsince2002-droid/isekai-images/ccf1f119eb3c78497930f1f15172681b443a0f1b/Shade/Shade%20-%201st%20Evolution.jpg"},
+    {name:"Void Panther",buff:"Dungeon +24%, Crit +8%",img:"https://raw.githubusercontent.com/distantsince2002-droid/isekai-images/ccf1f119eb3c78497930f1f15172681b443a0f1b/Shade/Shade%20-%202nd%20Evolution.jpg"},
+    {name:"Eternal Shadow",buff:"Dungeon +35%, Crit +15%",img:"https://raw.githubusercontent.com/distantsince2002-droid/isekai-images/ccf1f119eb3c78497930f1f15172681b443a0f1b/Shade/Shade%20-%203rd%20Evolution.jpg"}
+  ]},
+  {id:3,name:"Pebble",type:"Earth Golem",unlock:{dungeon:5},forms:[
+    {name:"Pebble",buff:"Defense +18%",img:"https://raw.githubusercontent.com/distantsince2002-droid/isekai-images/ccf1f119eb3c78497930f1f15172681b443a0f1b/Pebble/Pebble%20(Earth%20Golem).jpg"},
+    {name:"Boulder Golem",buff:"Defense +26%",img:"https://raw.githubusercontent.com/distantsince2002-droid/isekai-images/ccf1f119eb3c78497930f1f15172681b443a0f1b/Pebble/Pebble%20-%201st%20Evolution.jpg"},
+    {name:"Mountain Titan",buff:"Defense +35%, HP +12%",img:"https://raw.githubusercontent.com/distantsince2002-droid/isekai-images/ccf1f119eb3c78497930f1f15172681b443a0f1b/Pebble/Pebble%20-%202nd%20Evolution.jpg"},
+    {name:"World Anchor",buff:"Defense +50%, HP +25%",img:"https://raw.githubusercontent.com/distantsince2002-droid/isekai-images/ccf1f119eb3c78497930f1f15172681b443a0f1b/Pebble/Pebble%20-%203rd%20Evolution.jpg"}
+  ]},
+  {id:4,name:"Pearl",type:"Moon Bunny",unlock:{night:true},forms:[
+    {name:"Pearl",buff:"Night Income +22%",img:"https://raw.githubusercontent.com/distantsince2002-droid/isekai-images/ccf1f119eb3c78497930f1f15172681b443a0f1b/Pearl/Pearl%20(Moon%20Bunny).jpg"},
+    {name:"Lunar Hare",buff:"Night Income +30%",img:"https://raw.githubusercontent.com/distantsince2002-droid/isekai-images/ccf1f119eb3c78497930f1f15172681b443a0f1b/Pearl/Pearl%20-%201st%20Evolution.jpg"},
+    {name:"Celestial Rabbit",buff:"Night Income +40%, Regen +10%",img:"https://raw.githubusercontent.com/distantsince2002-droid/isekai-images/ccf1f119eb3c78497930f1f15172681b443a0f1b/Pearl/Pearl%20-%202nd%20Evolution.jpg"},
+    {name:"Moon Empress",buff:"Night Income +55%, Regen +20%",img:"https://raw.githubusercontent.com/distantsince2002-droid/isekai-images/ccf1f119eb3c78497930f1f15172681b443a0f1b/Pearl/Pearl%20-%203rd%20Evolution.jpg"}
+  ]},
+  {id:5,name:"Moss",type:"Forest Spirit",unlock:{year:2},forms:[
+    {name:"Moss",buff:"Regen +13%",img:"https://raw.githubusercontent.com/distantsince2002-droid/isekai-images/ccf1f119eb3c78497930f1f15172681b443a0f1b/Moss/Moss%20(Forest%20Spirit).jpg"},
+    {name:"Verdant Spirit",buff:"Regen +20%",img:"https://raw.githubusercontent.com/distantsince2002-droid/isekai-images/ccf1f119eb3c78497930f1f15172681b443a0f1b/Moss/Moss%20-%201st%20Evolution.jpg"},
+    {name:"Ancient Treant",buff:"Regen +28%, Def +10%",img:"https://raw.githubusercontent.com/distantsince2002-droid/isekai-images/ccf1f119eb3c78497930f1f15172681b443a0f1b/Moss/Moss%20-%202nd%20Evolution.jpg"},
+    {name:"World Tree Spirit",buff:"Regen +40%, Def +20%",img:"https://raw.githubusercontent.com/distantsince2002-droid/isekai-images/ccf1f119eb3c78497930f1f15172681b443a0f1b/Moss/Moss%20-%203rd%20Evolution.jpg"}
+  ]},
+  {id:6,name:"Mist",type:"Fog Serpent",unlock:{money:15000},forms:[
+    {name:"Mist",buff:"Evasion +12%",img:"https://raw.githubusercontent.com/distantsince2002-droid/isekai-images/ccf1f119eb3c78497930f1f15172681b443a0f1b/Mist/Mist%20(Mist%20Serpent).jpg"},
+    {name:"Cloud Serpent",buff:"Evasion +18%",img:"https://raw.githubusercontent.com/distantsince2002-droid/isekai-images/ccf1f119eb3c78497930f1f15172681b443a0f1b/Mist/Mist%20-%201st%20Evolution.jpg"},
+    {name:"Storm Viper",buff:"Evasion +25%, Spd +10%",img:"https://raw.githubusercontent.com/distantsince2002-droid/isekai-images/ccf1f119eb3c78497930f1f15172681b443a0f1b/Mist/Mist%20-%202nd%20Evolution.jpg"},
+    {name:"Ethereal Hydra",buff:"Evasion +38%, Spd +18%",img:"https://raw.githubusercontent.com/distantsince2002-droid/isekai-images/ccf1f119eb3c78497930f1f15172681b443a0f1b/Mist/Mist%20-%203rd%20Evolution.jpg"}
+  ]},
+  {id:7,name:"Luna",type:"Star Kitten",unlock:{prestige:1},forms:[
+    {name:"Luna",buff:"Magic +15%",img:"https://raw.githubusercontent.com/distantsince2002-droid/isekai-images/ccf1f119eb3c78497930f1f15172681b443a0f1b/Luna/Luna%20(Star%20Kitten).jpg"},
+    {name:"Galaxy Cat",buff:"Magic +22%",img:"https://raw.githubusercontent.com/distantsince2002-droid/isekai-images/ccf1f119eb3c78497930f1f15172681b443a0f1b/Luna/Luna%20-%201st%20Evolution.jpg"},
+    {name:"Nebula Stalker",buff:"Magic +30%, Crit +10%",img:"https://raw.githubusercontent.com/distantsince2002-droid/isekai-images/ccf1f119eb3c78497930f1f15172681b443a0f1b/Luna/Luna%20-%202nd%20Evolution.jpg"},
+    {name:"Celestial Sovereign",buff:"Magic +45%, Crit +18%",img:"https://raw.githubusercontent.com/distantsince2002-droid/isekai-images/ccf1f119eb3c78497930f1f15172681b443a0f1b/Luna/Luna%20-%203rd%20Evolution.jpg"}
+  ]},
+  {id:8,name:"Frost",type:"Ice Fox",unlock:{dungeon:12},forms:[
+    {name:"Frost",buff:"Ice Damage +16%",img:"https://raw.githubusercontent.com/distantsince2002-droid/isekai-images/ccf1f119eb3c78497930f1f15172681b443a0f1b/Frost/Frost%20(Ice%20Fox).jpg"},
+    {name:"Blizzard Fox",buff:"Ice Damage +24%",img:"https://raw.githubusercontent.com/distantsince2002-droid/isekai-images/ccf1f119eb3c78497930f1f15172681b443a0f1b/Frost/Frost%20-%201st%20Evolution.jpg"},
+    {name:"Glacial Stalker",buff:"Ice Damage +32%, Def +12%",img:"https://raw.githubusercontent.com/distantsince2002-droid/isekai-images/ccf1f119eb3c78497930f1f15172681b443a0f1b/Frost/Frost%20-%202nd%20Evolution.jpg"},
+    {name:"Eternal Ice Fox",buff:"Ice Damage +48%, Def +22%",img:"https://raw.githubusercontent.com/distantsince2002-droid/isekai-images/ccf1f119eb3c78497930f1f15172681b443a0f1b/Frost/Frost%20-%203rd%20Evolution.jpg"}
+  ]},
+  {id:9,name:"Cinder",type:"Ash Phoenix",unlock:{prestige:2},forms:[
+    {name:"Cinder",buff:"Fire Damage +18%",img:"https://raw.githubusercontent.com/distantsince2002-droid/isekai-images/ccf1f119eb3c78497930f1f15172681b443a0f1b/Cinder/Cinder%20(Ash%20Phoenix).jpg"},
+    {name:"Flame Phoenix",buff:"Fire Damage +26%",img:"https://raw.githubusercontent.com/distantsince2002-droid/isekai-images/ccf1f119eb3c78497930f1f15172681b443a0f1b/Cinder/Cinder%20-%201st%20Evolution.jpg"},
+    {name:"Inferno Phoenix",buff:"Fire Damage +35%, Atk +12%",img:"https://raw.githubusercontent.com/distantsince2002-droid/isekai-images/ccf1f119eb3c78497930f1f15172681b443a0f1b/Cinder/Cinder%20-%202nd%20Evolution.jpg"},
+    {name:"Immortal Phoenix",buff:"Fire Damage +50%, Atk +20%",img:"https://raw.githubusercontent.com/distantsince2002-droid/isekai-images/ccf1f119eb3c78497930f1f15172681b443a0f1b/Cinder/Cinder%20-%203rd%20Evolution.jpg"}
+  ]},
+  {id:10,name:"Lumi",type:"Light Pixie",unlock:{year:3},forms:[
+    {name:"Lumi",buff:"Healing +14%",img:"https://raw.githubusercontent.com/distantsince2002-droid/isekai-images/ccf1f119eb3c78497930f1f15172681b443a0f1b/Lumi/Lumi%20(Fairy%20Fox).jpg"},
+    {name:"Solar Pixie",buff:"Healing +21%",img:"https://raw.githubusercontent.com/distantsince2002-droid/isekai-images/ccf1f119eb3c78497930f1f15172681b443a0f1b/Lumi/Lumi%20%E2%80%93%201st%20Evolution.jpg"},
+    {name:"Radiant Sprite",buff:"Healing +30%, Regen +10%",img:"https://raw.githubusercontent.com/distantsince2002-droid/isekai-images/ccf1f119eb3c78497930f1f15172681b443a0f1b/Lumi/Lumi%20%E2%80%93%202nd%20Evolution.jpg"},
+    {name:"Dawn Empress",buff:"Healing +45%, Regen +20%",img:"https://raw.githubusercontent.com/distantsince2002-droid/isekai-images/ccf1f119eb3c78497930f1f15172681b443a0f1b/Lumi/Lumi%20%E2%80%93%203rd%20Final%20Evolution.jpg"}
+  ]},
+  {id:11,name:"Ember",type:"Flame Pup",unlock:{money:25000},forms:[
+    {name:"Ember",buff:"Atk +15%",img:"https://raw.githubusercontent.com/distantsince2002-droid/isekai-images/ccf1f119eb3c78497930f1f15172681b443a0f1b/Ember/Ember%20(Flame%20Sprite).jpg"},
+    {name:"Magma Hound",buff:"Atk +22%",img:"https://raw.githubusercontent.com/distantsince2002-droid/isekai-images/ccf1f119eb3c78497930f1f15172681b443a0f1b/Ember/Ember-1st%20Evolution.jpg"},
+    {name:"Inferno Wolf",buff:"Atk +30%, Crit +10%",img:"https://raw.githubusercontent.com/distantsince2002-droid/isekai-images/ccf1f119eb3c78497930f1f15172681b443a0f1b/Ember/Ember-2nd%20Evolution.jpg"},
+    {name:"Hellfire Alpha",buff:"Atk +45%, Crit +18%",img:"https://raw.githubusercontent.com/distantsince2002-droid/isekai-images/ccf1f119eb3c78497930f1f15172681b443a0f1b/Ember/Ember%20-%203rd%20Evolution.jpg"}
+  ]},
+  {id:12,name:"Coral",type:"Reef Drake",unlock:{dungeon:8},forms:[
+    {name:"Coral",buff:"Water Resist +16%",img:"https://raw.githubusercontent.com/distantsince2002-droid/isekai-images/ccf1f119eb3c78497930f1f15172681b443a0f1b/Coral/Coral%20(Water%20Sprite).jpg"},
+    {name:"Tide Drake",buff:"Water Resist +24%",img:"https://raw.githubusercontent.com/distantsince2002-droid/isekai-images/ccf1f119eb3c78497930f1f15172681b443a0f1b/Coral/Coral%20-%201st%20Evolution.jpg"},
+    {name:"Abyss Serpent",buff:"Water Resist +33%, Def +10%",img:"https://raw.githubusercontent.com/distantsince2002-droid/isekai-images/ccf1f119eb3c78497930f1f15172681b443a0f1b/Coral/Coral%20-%202nd%20Evolution.jpg"},
+    {name:"Leviathan",buff:"Water Resist +48%, Def +20%",img:"https://raw.githubusercontent.com/distantsince2002-droid/isekai-images/ccf1f119eb3c78497930f1f15172681b443a0f1b/Coral/Coral%20-%203rd%20Evolution.jpg"}
+  ]},
+  {id:13,name:"Dew",type:"Water Sprite",unlock:{year:4},forms:[
+    {name:"Dew",buff:"Mana Regen +15%",img:"https://raw.githubusercontent.com/distantsince2002-droid/isekai-images/ccf1f119eb3c78497930f1f15172681b443a0f1b/Dew/Dew%20(Flower%20Fairy).jpg"},
+    {name:"Mist Sprite",buff:"Mana Regen +22%",img:"https://raw.githubusercontent.com/distantsince2002-droid/isekai-images/ccf1f119eb3c78497930f1f15172681b443a0f1b/Dew/Dew%20-%201st%20Evolution.jpg"},
+    {name:"Tidal Nymph",buff:"Mana Regen +30%, MP +12%",img:"https://raw.githubusercontent.com/distantsince2002-droid/isekai-images/ccf1f119eb3c78497930f1f15172681b443a0f1b/Dew/Dew%20-%202nd%20Evolution.jpg"},
+    {name:"Ocean Heart",buff:"Mana Regen +45%, MP +22%",img:"https://raw.githubusercontent.com/distantsince2002-droid/isekai-images/ccf1f119eb3c78497930f1f15172681b443a0f1b/Dew/Dew%20-%203rd%20Evolution.jpg"}
+  ]},
+  {id:14,name:"Blaze",type:"Solar Hawk",unlock:{prestige:3},forms:[
+    {name:"Blaze",buff:"Crit +14%",img:"https://raw.githubusercontent.com/distantsince2002-droid/isekai-images/ccf1f119eb3c78497930f1f15172681b443a0f1b/Blaze/Blaze%20(Magma%20Pup).jpg"},
+    {name:"Sun Hawk",buff:"Crit +21%",img:"https://raw.githubusercontent.com/distantsince2002-droid/isekai-images/ccf1f119eb3c78497930f1f15172681b443a0f1b/Blaze/Blaze%20-%201st%20Evolution.jpg"},
+    {name:"Phoenix Hawk",buff:"Crit +30%, Atk +10%",img:"https://raw.githubusercontent.com/distantsince2002-droid/isekai-images/ccf1f119eb3c78497930f1f15172681b443a0f1b/Blaze/Blaze%20-%202nd%20Evolution.jpg"},
+    {name:"Solar Emperor",buff:"Crit +45%, Atk +20%",img:"https://raw.githubusercontent.com/distantsince2002-droid/isekai-images/ccf1f119eb3c78497930f1f15172681b443a0f1b/Blaze/Blaze%20-%203rd%20Evolution.jpg"}
+  ]}
+];
+
+const WIVES = [
+  {id:0,name:"Aisha",race:"Human",intimacy:0,level:1,affinity:0,unlocked:true,fav:false,buff:"Charm +14%",img:"https://raw.githubusercontent.com/distantsince2002-droid/isekai-images/521af04062a4a8b39ec04ef0a207e23b0b7d4009/Aisha%20(Human).jpg"},
+  {id:1,name:"Aria",race:"Human",intimacy:0,level:1,affinity:0,unlocked:true,fav:false,buff:"All XP +9%",img:"https://raw.githubusercontent.com/distantsince2002-droid/isekai-images/521af04062a4a8b39ec04ef0a207e23b0b7d4009/Aria%20(Human).jpg"},
+  {id:2,name:"Celeste",race:"Angelic",intimacy:0,level:1,affinity:0,unlocked:false,fav:false,buff:"XP +11%",img:"https://raw.githubusercontent.com/distantsince2002-droid/isekai-images/521af04062a4a8b39ec04ef0a207e23b0b7d4009/Celeste%20(Angelic).jpg"},
+  {id:3,name:"Elowen",race:"Elf",intimacy:0,level:1,affinity:0,unlocked:false,fav:false,buff:"Nature Regen +16%",img:"https://raw.githubusercontent.com/distantsince2002-droid/isekai-images/521af04062a4a8b39ec04ef0a207e23b0b7d4009/Elowen%20(Elf).jpg"},
+  {id:4,name:"Freya",race:"Human",intimacy:0,level:1,affinity:0,unlocked:false,fav:false,buff:"Boss Damage +25%",img:"https://raw.githubusercontent.com/distantsince2002-droid/isekai-images/521af04062a4a8b39ec04ef0a207e23b0b7d4009/Freya%20(Human).jpg"},
+  {id:5,name:"Hana",race:"Human",intimacy:0,level:1,affinity:0,unlocked:false,fav:false,buff:"Charm +12%",img:"https://raw.githubusercontent.com/distantsince2002-droid/isekai-images/521af04062a4a8b39ec04ef0a207e23b0b7d4009/Hana%20(Human).jpg"},
+  {id:6,name:"Iris",race:"Fairy",intimacy:0,level:1,affinity:0,unlocked:false,fav:false,buff:"Gift Effect +18%",img:"https://raw.githubusercontent.com/distantsince2002-droid/isekai-images/521af04062a4a8b39ec04ef0a207e23b0b7d4009/Iris%20(Fairy).jpg"},
+  {id:7,name:"Isolde",race:"Elf",intimacy:0,level:1,affinity:0,unlocked:true,fav:false,buff:"Income +9%",img:"https://raw.githubusercontent.com/distantsince2002-droid/isekai-images/521af04062a4a8b39ec04ef0a207e23b0b7d4009/Isolde%20(Elf).jpg"},
+  {id:8,name:"Kira",race:"Beastkin",intimacy:0,level:1,affinity:0,unlocked:false,fav:false,buff:"Business +12%",img:"https://raw.githubusercontent.com/distantsince2002-droid/isekai-images/521af04062a4a8b39ec04ef0a207e23b0b7d4009/Kira%20(Beastkin).jpg"},
+  {id:9,name:"Lilia",race:"Fairy",intimacy:0,level:1,affinity:0,unlocked:false,fav:false,buff:"Ice Damage +20%",img:"https://raw.githubusercontent.com/distantsince2002-droid/isekai-images/521af04062a4a8b39ec04ef0a207e23b0b7d4009/Lilia%20(Fairy).jpg"},
+  {id:10,name:"Luna",race:"Elf",intimacy:0,level:1,affinity:0,unlocked:false,fav:false,buff:"Night Income +28%",img:"https://raw.githubusercontent.com/distantsince2002-droid/isekai-images/521af04062a4a8b39ec04ef0a207e23b0b7d4009/Luna%20(Elf).jpg"},
+  {id:11,name:"Lyra",race:"Elf",intimacy:0,level:1,affinity:0,unlocked:false,fav:false,buff:"Tap +13%",img:"https://raw.githubusercontent.com/distantsince2002-droid/isekai-images/521af04062a4a8b39ec04ef0a207e23b0b7d4009/Lyra%20(Elf)%20.jpg"},
+  {id:12,name:"Miko",race:"Spirit",intimacy:0,level:1,affinity:0,unlocked:false,fav:false,buff:"Healing +18%",img:"https://raw.githubusercontent.com/distantsince2002-droid/isekai-images/521af04062a4a8b39ec04ef0a207e23b0b7d4009/Miko%20(Spirit).jpg"},
+  {id:13,name:"Mira",race:"Human",intimacy:0,level:1,affinity:0,unlocked:true,fav:false,buff:"Pet XP +18%",img:"https://raw.githubusercontent.com/distantsince2002-droid/isekai-images/521af04062a4a8b39ec04ef0a207e23b0b7d4009/Mira%20(Human).jpg"},
+  {id:14,name:"Nia",race:"Beastkin",intimacy:0,level:1,affinity:0,unlocked:false,fav:false,buff:"Crit +11%",img:"https://raw.githubusercontent.com/distantsince2002-droid/isekai-images/521af04062a4a8b39ec04ef0a207e23b0b7d4009/Nia%20(Beastkin)%20.jpg"},
+  {id:15,name:"Nora",race:"Human",intimacy:0,level:1,affinity:0,unlocked:false,fav:false,buff:"Story XP +15%",img:"https://raw.githubusercontent.com/distantsince2002-droid/isekai-images/521af04062a4a8b39ec04ef0a207e23b0b7d4009/Nora%20(Human).jpg"},
+  {id:16,name:"Raven",race:"Demon",intimacy:0,level:1,affinity:0,unlocked:false,fav:false,buff:"Shadow Power +18%",img:"https://raw.githubusercontent.com/distantsince2002-droid/isekai-images/521af04062a4a8b39ec04ef0a207e23b0b7d4009/Raven%20(Demon).jpg"},
+  {id:17,name:"Scarlet",race:"Demon",intimacy:0,level:1,affinity:0,unlocked:false,fav:false,buff:"Crit Damage +18%",img:"https://raw.githubusercontent.com/distantsince2002-droid/isekai-images/521af04062a4a8b39ec04ef0a207e23b0b7d4009/Scarlet%20(Demon).jpg"},
+  {id:18,name:"Seraphina",race:"Demon",intimacy:0,level:1,affinity:0,unlocked:false,fav:false,buff:"Life +7",img:"https://raw.githubusercontent.com/distantsince2002-droid/isekai-images/521af04062a4a8b39ec04ef0a207e23b0b7d4009/Seraphina%20(Demon).jpg"},
+  {id:19,name:"Sophia",race:"Human",intimacy:0,level:1,affinity:0,unlocked:false,fav:false,buff:"All XP +8%",img:"https://raw.githubusercontent.com/distantsince2002-droid/isekai-images/521af04062a4a8b39ec04ef0a207e23b0b7d4009/Sophia%20(Human).jpg"},
+  {id:20,name:"Sylvia",race:"Elf",intimacy:0,level:1,affinity:0,unlocked:false,fav:false,buff:"Nature Income +16%",img:"https://raw.githubusercontent.com/distantsince2002-droid/isekai-images/521af04062a4a8b39ec04ef0a207e23b0b7d4009/Sylvia%20(Elf).jpg"},
+  {id:21,name:"Tessa",race:"Beastkin",intimacy:0,level:1,affinity:0,unlocked:false,fav:false,buff:"Trap Resist +25%",img:"https://raw.githubusercontent.com/distantsince2002-droid/isekai-images/521af04062a4a8b39ec04ef0a207e23b0b7d4009/Tessa%20(Beastkin).jpg"},
+  {id:22,name:"Vespera",race:"Dark Elf",intimacy:0,level:1,affinity:0,unlocked:false,fav:false,buff:"Shadow Dungeon +22%",img:"https://raw.githubusercontent.com/distantsince2002-droid/isekai-images/521af04062a4a8b39ec04ef0a207e23b0b7d4009/Vespera%20(Dark%20Elf).jpg"},
+  {id:23,name:"Yuki",race:"Foxkin",intimacy:0,level:1,affinity:0,unlocked:false,fav:false,buff:"Ice Resist +35%",img:"https://raw.githubusercontent.com/distantsince2002-droid/isekai-images/521af04062a4a8b39ec04ef0a207e23b0b7d4009/Yuki%20(Foxkin).jpg"},
+  {id:24,name:"Zara",race:"Dark Elf",intimacy:0,level:1,affinity:0,unlocked:false,fav:false,buff:"Heat Income +15%",img:"https://raw.githubusercontent.com/distantsince2002-droid/isekai-images/521af04062a4a8b39ec04ef0a207e23b0b7d4009/Zara%20(Dark%20Elf).jpg"}
+];
+
+/* ============================================================
+   STATE
+============================================================ */
+const SAVE_KEY = "isekai_full_images_v1";
+const defaultState = {
+  money: 0, prestige: 0, prestigePoints: 0, year: 1, day: 1, life: 100, kibble: 12,
+  hero: 0, unlockedHeroes: [0], pendingHeroSelect: false,
+  favWife: -1, activePets: [0, 2], lastTick: Date.now(),
+  pets: {}, wives: {}
+};
+let state = structuredClone(defaultState);
+let selectedHeroTemp = 0;
+
+function save(){ try{ localStorage.setItem(SAVE_KEY, JSON.stringify({state})); }catch(e){} }
+function load(){
+  const raw = localStorage.getItem(SAVE_KEY);
+  if(!raw) return false;
+  try{
+    const d = JSON.parse(raw);
+    if(d.state){
+      state = Object.assign(structuredClone(defaultState), d.state);
+      if(!state.unlockedHeroes.includes(0)) state.unlockedHeroes.unshift(0);
+    }
+    return true;
+  }catch(e){ return false; }
+}
+
+/* ============================================================
+   ECONOMY
+============================================================ */
+let dirty = true, cachedIncome = 0.8, cachedTap = 1;
+function markEconomyDirty(){ dirty = true; }
+function recalc(){
+  let p = 1 + (state.prestige||0)*0.4;
+  (state.activePets||[]).forEach(id => {
+    const pr = getPetProgress(id);
+    p *= (1 + (pr.evo||0)*0.07);
+  });
+  cachedTap = Math.max(1, Math.floor(p));
+  cachedIncome = 0.9 + (state.prestige||0)*0.3 + (state.activePets||[]).length*0.3;
+  dirty = false;
+}
+function getTapPower(){ if(dirty) recalc(); return cachedTap; }
+function getIncome(){ if(dirty) recalc(); return cachedIncome; }
+function tick(){
+  const now = Date.now();
+  const dt = Math.min((now - (state.lastTick||now))/1000, 30);
+  state.lastTick = now;
+  state.money += getIncome() * dt;
+  state.day = (state.day||0) + dt/25;
+  if(state.day >= 30){ state.day = 0; state.year = (state.year||0) + 1/12; }
+}
+function tap(){ state.money += getTapPower(); if(Math.random() < 0.09) state.kibble++; }
+
+/* ============================================================
+   HERO SYSTEM
+============================================================ */
+function getCurrentHero(){ return HEROES.find(h => h.id === state.hero) || HEROES[0]; }
+function updateHeroDisplay(){
+  const h = getCurrentHero();
+  const img1 = document.getElementById("currentHeroImg");
+  const img2 = document.getElementById("mainHeroImg");
+  const name = document.getElementById("currentHeroName");
+  if(img1) img1.src = h.img;
+  if(img2) img2.src = h.img;
+  if(name) name.textContent = h.name;
+}
+function isHeroUnlocked(id){ return (state.unlockedHeroes || [0]).includes(id); }
+function unlockNextHero(){
+  const next = Math.min(9, (state.unlockedHeroes || [0]).length);
+  if(!state.unlockedHeroes.includes(next)){
+    state.unlockedHeroes.push(next);
+    return HEROES[next];
+  }
+  return null;
+}
+function openHeroSelect(force = false){
+  selectedHeroTemp = state.hero;
+  document.getElementById("heroModalTitle").textContent = force ? "? New Life – Choose Your Hero ?" : "Select Hero";
+  document.getElementById("heroModalDesc").textContent = force ? "A new cycle begins. Choose your hero." : "Change your current hero.";
+  const grid = document.getElementById("heroGrid");
+  grid.innerHTML = "";
+  HEROES.forEach(h => {
+    const unlocked = isHeroUnlocked(h.id);
+    const card = document.createElement("div");
+    card.className = "hero-card" + (h.id === selectedHeroTemp ? " selected" : "") + (!unlocked ? " locked" : "");
+    card.innerHTML = `
+      <img src="${h.img}" alt="${h.name}" loading="lazy">
+      <div style="font-weight:600;font-size:13px">${h.name}</div>
+      <div class="small">${unlocked ? "Unlocked" : "Locked"}</div>`;
+    if(unlocked){
+      card.onclick = () => {
+        selectedHeroTemp = h.id;
+        document.querySelectorAll(".hero-card").forEach(c => c.classList.remove("selected"));
+        card.classList.add("selected");
+      };
+    }
+    grid.appendChild(card);
+  });
+  document.getElementById("heroModal").classList.add("show");
+}
+function closeHeroSelect(){
+  if(state.pendingHeroSelect) return;
+  document.getElementById("heroModal").classList.remove("show");
+}
+function confirmHeroSelection(){
+  state.hero = selectedHeroTemp;
+  state.pendingHeroSelect = false;
+  updateHeroDisplay();
+  document.getElementById("heroModal").classList.remove("show");
+  save();
+  render();
+}
+
+/* ============================================================
+   PRESTIGE
+============================================================ */
+function doPrestige(){
+  const newly = unlockNextHero();
+  state.prestige = (state.prestige || 0) + 1;
+  state.prestigePoints = (state.prestigePoints || 0) + Math.floor(state.year * 4 + Math.log10(state.money+1)*12);
+  state.money = 800;
+  state.year = 1;
+  state.day = 1;
+  state.life = 100 + state.prestige * 12;
+  state.kibble = Math.floor((state.kibble || 0) * 0.35);
+  state.activePets = [];
+  state.pendingHeroSelect = true;
+  markEconomyDirty();
+  save();
+
+  let msg = `Cycle complete!\nPrestige Level: ${state.prestige}`;
+  if(newly) msg += `\n\nNew Hero unlocked: ${newly.name}`;
+  alert(msg);
+  openHeroSelect(true);
+}
+
+/* ============================================================
+   PETS
+============================================================ */
+function getPetProgress(id){
+  if(!state.pets[id]){
+    const pet = PETS.find(p => p.id === id);
+    state.pets[id] = { unlocked: !!(pet?.unlock?.start), evo: 0, kibble: 0, affinity: 0 };
+  }
+  return state.pets[id];
+}
+function getCurrentForm(id){
+  const p = PETS.find(x => x.id === id);
+  if(!p) return { name: "?", buff: "", img: "" };
+  return p.forms[Math.min(getPetProgress(id).evo || 0, p.forms.length - 1)];
+}
+function getPetImage(id){
+  const form = getCurrentForm(id);
+  return form.img || `https://api.dicebear.com/9.x/bottts/svg?seed=${id}`;
+}
+function renderPets(){
+  const list = document.getElementById("petsList");
+  if(!list) return;
+  list.innerHTML = `<p class="small" style="margin-bottom:10px">Active: ${(state.activePets||[]).length}/3</p>`;
+  PETS.forEach(p => {
+    const prog = getPetProgress(p.id);
+    if(!prog.unlocked) return;
+    const form = getCurrentForm(p.id);
+    const eq = (state.activePets||[]).includes(p.id);
+    const div = document.createElement("div");
+    div.className = "card" + (eq ? " equipped" : "");
+    div.innerHTML = `
+      <div class="flex-row">
+        <img src="${getPetImage(p.id)}" class="pet-portrait" loading="lazy"
+             onerror="this.src='https://api.dicebear.com/9.x/bottts/svg?seed=${p.name}'">
+        <div>
+          <strong>${form.name}</strong> <span class="small">Evo ${prog.evo}/3</span><br>
+          <span class="small">${form.buff}</span>
+          <div class="bar"><div class="barFill" style="width:${Math.min(prog.kibble||0,100)}%"></div></div>
+          <button class="btn" onclick="feedPet(${p.id})">Feed</button>
+          <button class="btn secondary" onclick="equipPet(${p.id})">${eq ? "Unequip" : "Equip"}</button>
+        </div>
+      </div>`;
+    list.appendChild(div);
+  });
+}
+function feedPet(id){
+  if(state.kibble < 1) return alert("No kibble!");
+  const pr = getPetProgress(id);
+  state.kibble--;
+  pr.kibble = (pr.kibble||0) + 25;
+  pr.affinity = (pr.affinity||0) + 2;
+  if(pr.kibble >= 100 && pr.evo < 3){
+    pr.kibble -= 100;
+    pr.evo++;
+    alert(getCurrentForm(id).name + " evolved!");
+  }
+  markEconomyDirty();
+  renderPets();
+  render();
+  save();
+}
+function equipPet(id){
+  if(!state.activePets) state.activePets = [];
+  const i = state.activePets.indexOf(id);
+  if(i >= 0) state.activePets.splice(i,1);
+  else if(state.activePets.length < 3) state.activePets.push(id);
+  else return alert("Max 3 active pets");
+  markEconomyDirty();
+  renderPets();
+  save();
+}
+
+/* ============================================================
+   WIVES
+============================================================ */
+function renderWives(){
+  const list = document.getElementById("wivesList");
+  if(!list) return;
+  list.innerHTML = "";
+  WIVES.forEach(w => {
+    if(!w.unlocked) return;
+    const div = document.createElement("div");
+    div.className = "card" + (w.fav ? " fav" : "");
+    div.innerHTML = `
+      <div class="flex-row">
+        <img src="${w.img}" class="portrait" loading="lazy"
+             onerror="this.src='https://api.dicebear.com/9.x/lorelei/svg?seed=${w.name}&backgroundColor=c77dff'">
+        <div>
+          <strong>${w.name}</strong> <span class="small">(${w.race})</span><br>
+          <span class="small">${w.buff}</span>
+          <div class="bar"><div class="barFill" style="width:${Math.min(w.intimacy||0,100)}%"></div></div>
+          <button class="btn" onclick="giftWife(${w.id})">Gift (500g)</button>
+          <button class="btn secondary" onclick="favouriteWife(${w.id})">${w.fav ? "? Fav" : "Favourite"}</button>
+        </div>
+      </div>`;
+    list.appendChild(div);
+  });
+}
+function giftWife(id){
+  const w = WIVES.find(x => x.id === id);
+  if(!w || state.money < 500) return alert("Not enough gold");
+  state.money -= 500;
+  w.intimacy = (w.intimacy||0) + 18;
+  w.affinity = (w.affinity||0) + 4;
+  if(w.intimacy >= 100){ w.intimacy -= 100; w.level = (w.level||1) + 1; }
+  renderWives();
+  render();
+  save();
+}
+function favouriteWife(id){
+  WIVES.forEach(w => w.fav = false);
+  const w = WIVES.find(x => x.id === id);
+  if(w){ w.fav = true; state.favWife = id; }
+  renderWives();
+  save();
+}
+
+/* ============================================================
+   UI
+============================================================ */
+function render(){
+  document.getElementById("money").textContent = Math.floor(state.money).toLocaleString();
+  document.getElementById("year").textContent = (state.year||1).toFixed(1);
+  document.getElementById("life").textContent = Math.floor(state.life||100);
+  document.getElementById("kibble").textContent = state.kibble||0;
+  document.getElementById("prestige").textContent = state.prestige||0;
+  document.getElementById("pp").textContent = state.prestigePoints||0;
+  document.getElementById("incomeText").textContent = `+${getIncome().toFixed(1)}/s`;
+  updateHeroDisplay();
+}
+function showTab(tab){
+  document.querySelectorAll(".panel").forEach(p => p.classList.remove("active"));
+  document.querySelectorAll(".navBtn").forEach(b => b.classList.remove("active"));
+  document.getElementById("panel-"+tab)?.classList.add("active");
+  document.querySelector(`[data-tab="${tab}"]`)?.classList.add("active");
+  if(tab === "companions") renderWives();
+  if(tab === "tames") renderPets();
+}
+function toast(msg){
+  const t = document.getElementById("toast");
+  t.textContent = msg; t.style.opacity = 1;
+  clearTimeout(t._t); t._t = setTimeout(() => t.style.opacity = 0, 2200);
+}
+
+/* ============================================================
+   INIT
+============================================================ */
+function initGame(){
+  load();
+  // Ensure starters
+  getPetProgress(0).unlocked = true;
+  getPetProgress(2).unlocked = true;
+  if(!state.unlockedHeroes || state.unlockedHeroes.length === 0) state.unlockedHeroes = [0];
+  if(state.hero === undefined) state.hero = 0;
+
+  document.getElementById("tapBtn").onclick = () => { tap(); render(); };
+
+  setInterval(() => { tick(); render(); }, 300);
+  setInterval(save, 12000);
+
+  if(state.pendingHeroSelect) setTimeout(() => openHeroSelect(true), 400);
+
+  updateHeroDisplay();
+  render();
+  console.log("%cIsekai Life Tycoon – All Images Loaded", "color:#c77dff;font-size:14px");
+}
+
+if(document.readyState === "loading"){
+  document.addEventListener("DOMContentLoaded", initGame);
+} else {
+  initGame();
+}
+</script>
+</body>
+</html>
