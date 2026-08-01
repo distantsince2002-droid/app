@@ -242,20 +242,6 @@ button{cursor:pointer;font:inherit}
 
 <div id="toast"></div>
 
-<script>
-/* ============================================================
-   ILT PART 1/7 — SHELL ONLY
-   File: isekai-life-tycoon.html
-   NEXT: Paste PART 2 immediately below this comment.
-   Do NOT close </script> until PART 7.
-   ============================================================ */
-
-// --- PASTE PART 2 HERE ---
-  /* ============================================================
-   ILT PART 2/7 — ASSETS + HEROES / PETS / WIVES
-   PASTE: under "PASTE PART 2 HERE" from Part 1
-   NEXT: after this block, paste PART 3
-   ============================================================ */
 
 const IMG = "https://raw.githubusercontent.com/distantsince2002-droid/isekai-images/main/";
 function img(path) {
@@ -463,15 +449,6 @@ const SPECIAL_SUMMON_NAMES = ["Aisha", "Celeste", "Elowen", "Nia", "Raven", "Sop
 const SOUL_FRAGMENT_COST = 20;
 const DATE_COOLDOWN_MS = 2 * 60 * 60 * 1000; // 2 hours — free dates
 
-// --- END ILT PART 2/7 ---
-// --- PASTE PART 3 HERE ---
-  /* ============================================================
-   ILT PART 3/7 — WORLD DATA
-   Houses, businesses, mounts, materials, dungeons, store,
-   armour, weapons, merchant, challenges, achievements, story bg
-   PASTE: under "PASTE PART 3 HERE" from Part 2
-   NEXT: PART 4 (state + economy)
-   ============================================================ */
 
 // ---------- HOUSES (18) — buffs never affect tap ----------
 const HOUSES = [
@@ -736,15 +713,7 @@ const PRESTIGE_IMAGES = {
   shadyCorner: img("Shady merchant corner (base scene).jpg")
 };
 
-// --- END ILT PART 3/7 ---
-// --- PASTE PART 4 HERE ---
-  /* ============================================================
-   ILT PART 4/7 — STATE + ECONOMY
-   defaultState, AES save/load, accounts, inventory helpers,
-   economy (tick/tap/power), offline, challenges progress
-   PASTE: under "PASTE PART 4 HERE" from Part 3
-   NEXT: PART 5 (companions, tames, store, houses, biz)
-   ============================================================ */
+
 
 const SAVE_VERSION = 3;
 const ENCRYPTION_PREFIX = "ENC::";
@@ -1330,13 +1299,7 @@ function tick() {
   }
 }
 
-// --- END ILT PART 4/7 ---
-// --- PASTE PART 5 HERE ---
-    /* ============================================================
-   ILT PART 5/7 — COMPANIONS · TAMES · STORE · HOUSES · MOUNTS · BIZ
-   PASTE: under "PASTE PART 5 HERE" from Part 4
-   NEXT: PART 6 (dungeon, inventory, armour, story, prestige)
-   ============================================================ */
+
 
 // ===================== COMPANIONS =====================
 const DATE_CD = typeof DATE_COOLDOWN_MS !== "undefined" ? DATE_COOLDOWN_MS : 2 * 60 * 60 * 1000;
@@ -2153,13 +2116,7 @@ window.renderWives = renderCompanions;
 window.renderPets = renderTames;
 window.giftWife = function (id) { openGiftSelector(id); };
 
-// --- END ILT PART 5/7 ---
-// --- PASTE PART 6 HERE ---
-            /* ============================================================
-   ILT PART 6/7 — DUNGEON · INVENTORY · ARMOUR · STORY · PRESTIGE
-   PASTE: under "PASTE PART 6 HERE" from Part 5
-   NEXT: PART 7 (UI, main/init, daily login, close script)
-   ============================================================ */
+
 
 // ===================== INVENTORY =====================
 function getMaterialMeta(id) {
@@ -3075,13 +3032,7 @@ window.formatLoot = formatLoot;
 window.addItem = addItem;
 window.removeItem = removeItem;
 
-// --- END ILT PART 6/7 ---
-// --- PASTE PART 7 HERE ---
-    /* ============================================================
-   ILT PART 7/7 — UI · DAILY LOGIN/CHALLENGES · MAIN · CLOSE
-   PASTE: under "PASTE PART 7 HERE" from Part 6
-   Then save the whole file as isekai-life-tycoon.html and open in a browser.
-   ============================================================ */
+
 
 // ===================== UI =====================
 const TABS = [
