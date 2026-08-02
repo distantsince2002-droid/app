@@ -1,0 +1,4033 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<title>Isekai Life Tycoon</title>
+<style>
+:root{
+  --bg:#0b0b14;--panel:#141428;--card:#1a1a30;--accent:#c77dff;--accent2:#00e5ff;
+  --text:#eee;--muted:#9a9ab0;--ok:#4caf50;--bad:#e74c3c;--gold:#ffd700;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+button{cursor:pointer;font:inherit}
+.btn{background:var(--accent);color:#111;border:none;border-radius:8px;padding:8px 12px;font-weight:600}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn.secondary{background:#2a2a48;color:var(--text)}
+.header{
+  position:sticky;top:0;z-index:100;background:rgba(11,11,20,.96);
+  border-bottom:1px solid #2a2a48;padding:8px 12px 8px 64px;
+  display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;font-size:13px;
+}
+.header b{color:var(--accent)}
+.header img.res-icon{width:16px;height:16px;vertical-align:-3px;margin-right:2px}
+#nav{
+  display:flex;flex-wrap:wrap;gap:4px;padding:8px;background:#10101c;
+  border-bottom:1px solid #2a2a48;position:sticky;top:48px;z-index:90;
+}
+#nav button{
+  background:#1e1e38;color:var(--text);border:1px solid #333;border-radius:8px;
+  padding:6px 10px;font-size:12px;
+}
+#nav button.active{background:var(--accent);color:#111;border-color:var(--accent)}
+.main{padding:12px;max-width:980px;margin:0 auto;padding-bottom:120px}
+.panel{display:none}
+.panel.active{display:block}
+.card{
+  background:var(--card);border:1px solid #2a2a48;border-radius:12px;
+  padding:12px;margin-bottom:10px;overflow:hidden;
+}
+.card.equipped{border-color:var(--accent)}
+.card.locked{opacity:.55}
+.card.active-card{outline:2px solid var(--accent2)}
+.section{color:var(--accent);font-weight:700;margin:14px 0 8px;font-size:14px}
+.small,.muted{font-size:12px;color:var(--muted)}
+.tag{display:inline-block;background:#2a2a48;color:var(--accent2);font-size:10px;padding:2px 6px;border-radius:6px;margin-left:4px}
+.flex{display:flex;gap:10px;align-items:flex-start}
+.bar{height:10px;background:#222;border-radius:6px;overflow:hidden;margin:4px 0}
+.barFill{height:100%;background:var(--accent);width:0%;transition:width .25s}
+.pet-img,.companion-img{width:72px;height:72px;object-fit:cover;border-radius:10px;border:2px solid #333;background:#111}
+#tapBtn{
+  display:block;width:100%;max-width:320px;margin:12px auto;padding:16px;
+  font-size:1.1rem;background:linear-gradient(135deg,var(--accent),#8b5cf6);color:#111;
+}
+#toast{
+  position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);
+  background:#1a1a30;border:1px solid var(--accent);padding:10px 16px;border-radius:10px;
+  z-index:5000;opacity:0;transition:.25s;pointer-events:none;max-width:90%;text-align:center;
+}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:4000;align-items:center;justify-content:center;padding:16px}
+.modal.show{display:flex}
+.modal-box{
+  background:var(--panel);border:1px solid #3a3a60;border-radius:14px;
+  padding:16px;max-width:520px;width:100%;max-height:85vh;overflow:auto;position:relative;
+}
+.modal-box .close{position:absolute;top:8px;right:10px;background:transparent;border:none;color:#aaa;font-size:22px}
+.hero-card{display:inline-block;width:100px;text-align:center;margin:6px;padding:6px;border-radius:10px;border:1px solid #333;cursor:pointer;vertical-align:top}
+.hero-card img{width:88px;height:110px;object-fit:cover;border-radius:8px}
+.hero-card.locked{opacity:.4;cursor:default}
+.hero-card.selected{border-color:var(--accent);box-shadow:0 0 12px #c77dff66}
+.inventory-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:10px;padding:8px}
+.inv-item{background:#1a1a30;border:2px solid #888;border-radius:12px;padding:10px 6px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:4px}
+.inv-item.rarity-common{border-color:#888}
+.inv-item.rarity-uncommon{border-color:#2ecc71}
+.inv-item.rarity-rare{border-color:#3498db}
+.inv-item.rarity-legendary{border-color:#f1c40f}
+.inv-item .inv-icon{width:48px;height:48px;object-fit:contain}
+.avatar-btn{position:fixed;top:6px;left:8px;z-index:110;border:none;background:transparent;padding:0}
+.avatar-btn img{width:44px;height:44px;border-radius:50%;border:2px solid var(--accent);object-fit:cover}
+.house-img{width:100%;max-height:140px;object-fit:cover;border-radius:8px;margin-bottom:8px;display:block}
+</style>
+</head>
+<body>
+
+<button type="button" class="avatar-btn" id="avatarBtn" title="Profile">
+  <img id="avatarIcon" src="" alt="avatar"/>
+</button>
+
+<header class="header">
+  <span><img class="res-icon" id="icon-gold" alt=""/> <b id="money">0</b></span>
+  <span>Year <b id="year">18.0</b></span>
+  <span><img class="res-icon" id="icon-life" alt=""/> <b id="life">100</b></span>
+  <span><img class="res-icon" id="icon-stamina" alt=""/> <b id="stamina">100</b></span>
+  <span><img class="res-icon" id="icon-mana" alt=""/> <b id="mana">50</b></span>
+  <span><img class="res-icon" id="icon-kibble" alt=""/> <b id="kibble">0</b></span>
+  <span>Souls <b id="souls">0</b></span>
+  <span>PP <b id="pp">0</b></span>
+  <span>Prestige <b id="prestige">0</b></span>
+  <span>DEF <b id="defence">0</b></span>
+  <span>Income <b id="incomeText">0</b>/s</span>
+</header>
+
+<nav id="nav"></nav>
+
+<main class="main">
+  <div id="panel-home" class="panel active">
+    <div class="card flex">
+      <img id="avatarImg" class="companion-img" alt="hero"/>
+      <div>
+        <div id="homeHeroName" style="font-weight:700">Young Adventurer</div>
+        <div id="homePower" class="small">Power: 0 · Defence: 0</div>
+        <div id="homeSummary" class="small"></div>
+      </div>
+    </div>
+    <button type="button" class="btn" id="tapBtn">TAP FOR GOLD</button>
+    <div id="loginArea"></div>
+    <div id="challengeList"></div>
+  </div>
+
+  <div id="panel-companions" class="panel"><div id="companionsList"></div></div>
+  <div id="panel-tames" class="panel"><div id="tamesList"></div></div>
+  <div id="panel-mounts" class="panel"><div id="mountsList"></div></div>
+  <div id="panel-inventory" class="panel"><div id="inventoryList"></div></div>
+  <div id="panel-store" class="panel"><div id="storeList"></div></div>
+  <div id="panel-business" class="panel"><div id="businessList"></div></div>
+  <div id="panel-craft" class="panel"><div id="craftList"></div></div>
+  <div id="panel-houses" class="panel"><div id="housesList"></div></div>
+  <div id="panel-prestige" class="panel">
+    <div class="card">Prestige <b id="pLevel">0</b> · PP <b id="pPoints">0</b> · Est <b id="estPP">0</b></div>
+    <div id="prestigeUpList"></div>
+  </div>
+  <div id="panel-dungeon" class="panel">
+    <div id="dungeonList"></div>
+    <div id="battleLog" class="card"></div>
+  </div>
+  <div id="panel-story" class="panel"><div id="storyList"></div></div>
+  <div id="panel-profile" class="panel"><div id="profilePanelContent"></div></div>
+</main>
+
+<div id="toast"></div>
+
+<div id="gameModal" class="modal">
+  <div class="modal-box">
+    <button type="button" class="close" onclick="closeModal()">×</button>
+    <h2 id="modalTitle" style="color:#c77dff;margin-bottom:10px"></h2>
+    <div id="modalBody" style="line-height:1.5;margin-bottom:16px"></div>
+    <div id="modalBtns" style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap"></div>
+  </div>
+</div>
+
+<div id="profileModal" class="modal">
+  <div class="modal-box">
+    <button type="button" class="close" onclick="closeModal()">×</button>
+    <img id="profileAvatar" style="width:80px;height:100px;object-fit:cover;border-radius:10px" alt=""/>
+    <h2 id="avatarTitle" style="color:#c77dff"></h2>
+    <input id="playerNameInput" maxlength="20" style="width:100%;margin:8px 0;padding:8px;background:#111;border:1px solid #444;color:#eee;border-radius:8px"/>
+    <div class="small">Account: <span id="currentAccountName">default</span></div>
+    <div id="profileStats" style="margin:10px 0"></div>
+    <div id="accountList" style="display:flex;flex-wrap:wrap;gap:6px;margin:8px 0"></div>
+    <input id="newAccountName" placeholder="New account" style="padding:6px;background:#111;border:1px solid #444;color:#eee;border-radius:6px"/>
+    <button type="button" class="btn" onclick="createNewAccount()">Create</button>
+    <div class="section">Achievements <span id="achCount"></span></div>
+    <div id="achievementList"></div>
+  </div>
+</div>
+
+<div id="heroModal" class="modal">
+  <div class="modal-box" style="max-width:640px">
+    <button type="button" class="close" onclick="if(!state.pendingHeroSelect)closeModal()">×</button>
+    <h2 style="color:#c77dff">Hero Forms</h2>
+    <div id="heroGrid"></div>
+  </div>
+</div>
+
+<script>
+/* ========== MODULE 01 — DATA (canonical, single-file, no export) ========== */
+/* PASTE ORDER: 01 → 02 → 03 → … Do not close the script tag in this module. */
+
+const HERO_IMG   = "https://raw.githubusercontent.com/distantsince2002-droid/isekai-images/e65df7aca6de0c5908f7fe58a5b93e84a4c1675b/";
+const PET_IMG    = "https://raw.githubusercontent.com/distantsince2002-droid/isekai-images/ccf1f119eb3c78497930f1f15172681b443a0f1b/";
+const WIFE_IMG   = "https://raw.githubusercontent.com/distantsince2002-droid/isekai-images/521af04062a4a8b39ec04ef0a207e23b0b7d4009/";
+const GIFT_IMG   = "https://raw.githubusercontent.com/distantsince2002-droid/isekai-images/092fb5000d644cab690a3a43935d68a61cf32907/gift%20png%20icons/";
+const MOUNT_IMG  = "https://raw.githubusercontent.com/distantsince2002-droid/isekai-images/092fb5000d644cab690a3a43935d68a61cf32907/mounts/";
+const ARMOUR_IMG = "https://raw.githubusercontent.com/distantsince2002-droid/isekai-images/4ed69aa19f5a16a20451f6748c6c39edb676864f/armour/";
+const WEAPON_IMG = "https://raw.githubusercontent.com/distantsince2002-droid/isekai-images/4ed69aa19f5a16a20451f6748c6c39edb676864f/weapons/";
+
+const DATE_COOLDOWN_MS = 2 * 60 * 60 * 1000;
+const SOUL_FRAGMENT_COST = 20;
+const SPECIAL_SUMMON_NAMES = ["Aisha","Celeste","Elowen","Nia","Raven","Sophia","Yuki","Zara"];
+
+const HEROES = [
+  {id:0,name:"Young Adventurer",img:HERO_IMG+"Young%20Adventurer.jpg",unlock:{prestige:0},desc:"Default form every life."},
+  {id:1,name:"Void Walker",img:HERO_IMG+"Void%20Walker.jpg",unlock:{prestige:1}},
+  {id:2,name:"The Student",img:HERO_IMG+"The%20Student.jpg",unlock:{prestige:2}},
+  {id:3,name:"Blade Saint",img:HERO_IMG+"Blade%20Saint.jpg",unlock:{prestige:3}},
+  {id:4,name:"Arcane Sovereign",img:HERO_IMG+"Arcane%20Sovereign.jpg",unlock:{prestige:4}},
+  {id:5,name:"World Ender",img:HERO_IMG+"World%20Ender.jpg",unlock:{prestige:5}}
+];
+
+/* PETS — folder-safe paths + dicebear fallback in render */
+const PETS = [
+  {id:0,name:"Zephyr",unlock:{merchant:true},pairWith:[],forms:[
+    {name:"Zephyr",type:"Wind",buff:"+Tap",img:PET_IMG+"Zephyr/Zephyr%20(Wind%20Owl).jpg"},
+    {name:"Zephyr II",type:"Wind",buff:"+Tap",img:PET_IMG+"Zephyr/Zephyr%20(Wind%20Owl).jpg"},
+    {name:"Zephyr III",type:"Wind",buff:"+Tap",img:PET_IMG+"Zephyr/Zephyr%20(Wind%20Owl).jpg"},
+    {name:"Zephyr IV",type:"Wind",buff:"+Tap",img:PET_IMG+"Zephyr/Zephyr%20(Wind%20Owl).jpg"}
+  ]},
+  {id:1,name:"Moss",unlock:{money:5000},pairWith:[],forms:[
+    {name:"Moss",type:"Nature",buff:"+Income",img:PET_IMG+"Moss/Moss.jpg"},
+    {name:"Moss II",type:"Nature",buff:"+Income",img:PET_IMG+"Moss/Moss.jpg"},
+    {name:"Moss III",type:"Nature",buff:"+Income",img:PET_IMG+"Moss/Moss.jpg"},
+    {name:"Moss IV",type:"Nature",buff:"+Income",img:PET_IMG+"Moss/Moss.jpg"}
+  ]},
+  {id:2,name:"Shade",unlock:{story:true},pairWith:[],forms:[
+    {name:"Shade",type:"Shadow",buff:"+Crit",img:PET_IMG+"Shade/Shade.jpg"},
+    {name:"Shade II",type:"Shadow",buff:"+Crit",img:PET_IMG+"Shade/Shade.jpg"},
+    {name:"Shade III",type:"Shadow",buff:"+Crit",img:PET_IMG+"Shade/Shade.jpg"},
+    {name:"Shade IV",type:"Shadow",buff:"+Crit",img:PET_IMG+"Shade/Shade.jpg"}
+  ]},
+  {id:3,name:"Coral",unlock:{money:25000},pairWith:[],forms:[
+    {name:"Coral",type:"Water",buff:"+Res",img:PET_IMG+"Coral/Coral.jpg"},
+    {name:"Coral II",type:"Water",buff:"+Res",img:PET_IMG+"Coral/Coral.jpg"},
+    {name:"Coral III",type:"Water",buff:"+Res",img:PET_IMG+"Coral/Coral.jpg"},
+    {name:"Coral IV",type:"Water",buff:"+Res",img:PET_IMG+"Coral/Coral.jpg"}
+  ]},
+  {id:4,name:"Blaze",unlock:{story:true},pairWith:[],forms:[
+    {name:"Blaze",type:"Fire",buff:"+Power",img:PET_IMG+"Blaze/Blaze.jpg"},
+    {name:"Blaze II",type:"Fire",buff:"+Power",img:PET_IMG+"Blaze/Blaze.jpg"},
+    {name:"Blaze III",type:"Fire",buff:"+Power",img:PET_IMG+"Blaze/Blaze.jpg"},
+    {name:"Blaze IV",type:"Fire",buff:"+Power",img:PET_IMG+"Blaze/Blaze.jpg"}
+  ]},
+  {id:5,name:"Frost",unlock:{year:20},pairWith:[],forms:[
+    {name:"Frost",type:"Ice",buff:"+DEF",img:PET_IMG+"Frost/Frost.jpg"},
+    {name:"Frost II",type:"Ice",buff:"+DEF",img:PET_IMG+"Frost/Frost.jpg"},
+    {name:"Frost III",type:"Ice",buff:"+DEF",img:PET_IMG+"Frost/Frost.jpg"},
+    {name:"Frost IV",type:"Ice",buff:"+DEF",img:PET_IMG+"Frost/Frost.jpg"}
+  ]},
+  {id:6,name:"Ember",unlock:{prestige:1},pairWith:[],forms:[
+    {name:"Ember",type:"Fire",buff:"+Income",img:PET_IMG+"Ember/Ember.jpg"},
+    {name:"Ember II",type:"Fire",buff:"+Income",img:PET_IMG+"Ember/Ember.jpg"},
+    {name:"Ember III",type:"Fire",buff:"+Income",img:PET_IMG+"Ember/Ember.jpg"},
+    {name:"Ember IV",type:"Fire",buff:"+Income",img:PET_IMG+"Ember/Ember.jpg"}
+  ]},
+  {id:7,name:"Nimbus",unlock:{dungeon:2},pairWith:[],forms:[
+    {name:"Nimbus",type:"Storm",buff:"+Tap",img:PET_IMG+"Nimbus/Nimbus.jpg"},
+    {name:"Nimbus II",type:"Storm",buff:"+Tap",img:PET_IMG+"Nimbus/Nimbus.jpg"},
+    {name:"Nimbus III",type:"Storm",buff:"+Tap",img:PET_IMG+"Nimbus/Nimbus.jpg"},
+    {name:"Nimbus IV",type:"Storm",buff:"+Tap",img:PET_IMG+"Nimbus/Nimbus.jpg"}
+  ]},
+  {id:8,name:"Echo",unlock:{money:100000},pairWith:[],forms:[
+    {name:"Echo",type:"Spirit",buff:"+Affinity",img:PET_IMG+"Echo/Echo.jpg"},
+    {name:"Echo II",type:"Spirit",buff:"+Affinity",img:PET_IMG+"Echo/Echo.jpg"},
+    {name:"Echo III",type:"Spirit",buff:"+Affinity",img:PET_IMG+"Echo/Echo.jpg"},
+    {name:"Echo IV",type:"Spirit",buff:"+Affinity",img:PET_IMG+"Echo/Echo.jpg"}
+  ]},
+  {id:9,name:"Cinder",unlock:{merchant:true},pairWith:[],forms:[
+    {name:"Cinder",type:"Ash",buff:"+Power",img:PET_IMG+"Cinder/Cinder.jpg"},
+    {name:"Cinder II",type:"Ash",buff:"+Power",img:PET_IMG+"Cinder/Cinder.jpg"},
+    {name:"Cinder III",type:"Ash",buff:"+Power",img:PET_IMG+"Cinder/Cinder.jpg"},
+    {name:"Cinder IV",type:"Ash",buff:"+Power",img:PET_IMG+"Cinder/Cinder.jpg"}
+  ]}
+];
+
+const WIVES = [
+  {id:0,name:"Aisha",race:"Human",buff:"+Income",img:WIFE_IMG+"Aisha.jpg",lore:"Quiet traveler of the bazaars."},
+  {id:1,name:"Aria",race:"Human",buff:"+Tap",img:WIFE_IMG+"Aria.jpg",lore:"Songstress of the taverns."},
+  {id:2,name:"Celeste",race:"Celestial",buff:"+Mana",img:WIFE_IMG+"Celeste.jpg",lore:"Star-touched guide."},
+  {id:3,name:"Elowen",race:"Elf",buff:"+Res",img:WIFE_IMG+"Elowen.jpg",lore:"Forest archivist."},
+  {id:4,name:"Freya",race:"Beastkin",buff:"+Power",img:WIFE_IMG+"Freya.jpg",lore:"Northern huntress."},
+  {id:5,name:"Hana",race:"Human",buff:"+Affinity",img:WIFE_IMG+"Hana.jpg",lore:"Merchant exclusive flower girl."},
+  {id:6,name:"Iris",race:"Human",buff:"+Crit",img:WIFE_IMG+"Iris.jpg",lore:"Alchemist's apprentice."},
+  {id:7,name:"Isolde",race:"Elf",buff:"+Mana",img:WIFE_IMG+"Isolde.jpg",lore:"Keeper of the ancient oak."},
+  {id:8,name:"Kira",race:"Beastkin",buff:"+Tap",img:WIFE_IMG+"Kira.jpg",lore:"Desert pathfinder."},
+  {id:9,name:"Lilia",race:"Fairy",buff:"+Income",img:WIFE_IMG+"Lilia.jpg",lore:"Meadow spirit."},
+  {id:10,name:"Luna",race:"Spirit",buff:"+Res",img:WIFE_IMG+"Luna.jpg",lore:"Voice of the Void."},
+  {id:11,name:"Lyra",race:"Human",buff:"+Intimacy",img:WIFE_IMG+"Lyra.jpg",lore:"Childhood friend across lives."},
+  {id:12,name:"Miko",race:"Human",buff:"+Mana",img:WIFE_IMG+"Miko.jpg",lore:"Shrine maiden."},
+  {id:13,name:"Mira",race:"Human",buff:"+Herb",img:WIFE_IMG+"Mira.jpg",lore:"Herbalist of the plains."},
+  {id:14,name:"Nia",race:"Beastkin",buff:"+Power",img:WIFE_IMG+"Nia.jpg",lore:"Swift scout."},
+  {id:15,name:"Nora",race:"Human",buff:"+Gold",img:WIFE_IMG+"Nora.jpg",lore:"Merchant's daughter."},
+  {id:16,name:"Raven",race:"Human",buff:"+Shadow",img:WIFE_IMG+"Raven.jpg",lore:"Night courier."},
+  {id:17,name:"Scarlet",race:"Demon",buff:"+Power",img:WIFE_IMG+"Scarlet.jpg",lore:"Crimson blade."},
+  {id:18,name:"Seraphina",race:"Celestial",buff:"+All",img:WIFE_IMG+"Seraphina.jpg",lore:"Fallen light."},
+  {id:19,name:"Sophia",race:"Human",buff:"+Craft",img:WIFE_IMG+"Sophia.jpg",lore:"Scholar of relics."},
+  {id:20,name:"Sylvia",race:"Elf",buff:"+Nature",img:WIFE_IMG+"Sylvia.jpg",lore:"Grove singer."},
+  {id:21,name:"Tessa",race:"Human",buff:"+Stamina",img:WIFE_IMG+"Tessa.jpg",lore:"Guild receptionist."},
+  {id:22,name:"Vespera",race:"Vampire",buff:"+Night",img:WIFE_IMG+"Vespera.jpg",lore:"Moonlit noble."},
+  {id:23,name:"Yuki",race:"Spirit",buff:"+Ice",img:WIFE_IMG+"Yuki.jpg",lore:"Snow spirit."},
+  {id:24,name:"Zara",race:"Beastkin",buff:"+Hunt",img:WIFE_IMG+"Zara.jpg",lore:"Pack leader."}
+];
+
+const HOUSE_BASE = "https://raw.githubusercontent.com/distantsince2002-droid/isekai-images/6a9f7253b54a4b0d1e2730ea1515e71a7e5d90b1/housing/";
+const HOUSES = [
+  {id:0,name:"Traveler Tent",rank:1,cost:500,buff:{type:"business",value:0.05},desc:"+5% Business Income",
+   imgExterior:HOUSE_BASE+"Traveler%20tent/Traveler%20tent%20exterior.jpg",imgInterior:HOUSE_BASE+"Traveler%20tent/Traveler%20tent%20interior.jpg"},
+  {id:1,name:"Wooden Cabin",rank:2,cost:2500,buff:{type:"intimacy",value:0.08},desc:"+8% Intimacy",
+   imgExterior:HOUSE_BASE+"Wooden%20cabin/Wooden%20cabin%20exterior.jpg",imgInterior:HOUSE_BASE+"Wooden%20cabin/Wooden%20cabin%20interior.jpg"},
+  {id:2,name:"Stone Cottage",rank:3,cost:8000,buff:{type:"business",value:0.10},desc:"+10% Business Income",
+   imgExterior:HOUSE_BASE+"Stone%20cottage/Stone%20cottage%20exterior.jpg",imgInterior:HOUSE_BASE+"Stone%20cottage/Stone%20cottage%20interior.jpg"},
+  {id:3,name:"Lakeside Lodge",rank:4,cost:20000,buff:{type:"intimacy",value:0.12},desc:"+12% Intimacy",
+   imgExterior:HOUSE_BASE+"Lakeside%20lodge/Lakeside%20lodge%20exterior.jpg",imgInterior:HOUSE_BASE+"Lakeside%20lodge/Lakeside%20lodge%20interior.jpg"},
+  {id:4,name:"Hilltop Manor",rank:5,cost:50000,buff:{type:"business",value:0.15},desc:"+15% Business Income",
+   imgExterior:HOUSE_BASE+"Hilltop%20manor/Hilltop%20manor%20exterior.jpg",imgInterior:HOUSE_BASE+"Hilltop%20manor/Hilltop%20manor%20interior.jpg"},
+  {id:5,name:"Royal Hunting Lodge",rank:6,cost:120000,buff:{type:"powerAffinity",value:0.10},desc:"+10% Power Affinity",
+   imgExterior:HOUSE_BASE+"Royal%20hunting%20lodge/Royal%20hunting%20lodge%20exterior.jpg",imgInterior:HOUSE_BASE+"Royal%20hunting%20lodge/Royal%20hunting%20lodge%20interior.jpg"},
+  {id:6,name:"Floating Sky Manor",rank:7,cost:300000,buff:{type:"influence",value:0.12},desc:"+12% Influence",
+   imgExterior:HOUSE_BASE+"Floating%20sky%20manor/Floating%20sky%20manor%20exterior.jpg",imgInterior:HOUSE_BASE+"Floating%20sky%20manor/Floating%20sky%20manor%20interior.jpg"},
+  {id:7,name:"Crystal Spire",rank:8,cost:750000,buff:{type:"business",value:0.20},desc:"+20% Business Income",
+   imgExterior:HOUSE_BASE+"Crystal%20spire/Crystal%20spire%20exterior.jpg",imgInterior:HOUSE_BASE+"Crystal%20spire/Crystal%20spire%20interior.jpg"},
+  {id:8,name:"Dragonbone Keep",rank:9,cost:1500000,buff:{type:"powerAffinity",value:0.18},desc:"+18% Power Affinity",
+   imgExterior:HOUSE_BASE+"Dragonbone%20keep/Dragonbone%20keep%20exterior.jpg",imgInterior:HOUSE_BASE+"Dragonbone%20keep/Dragonbone%20keep%20interior.jpg"},
+  {id:9,name:"Moonlit Villa",rank:10,cost:3500000,buff:{type:"intimacy",value:0.22},desc:"+22% Intimacy",
+   imgExterior:HOUSE_BASE+"Moonlit%20villa/Moonlit%20villa%20exterior.jpg",imgInterior:HOUSE_BASE+"Moonlit%20villa/Moonlit%20villa%20interior.jpg"},
+  {id:10,name:"Stormcrest Castle",rank:11,cost:8000000,buff:{type:"business",value:0.25},desc:"+25% Business Income",
+   imgExterior:HOUSE_BASE+"Stormcrest%20castle/Stormcrest%20castle%20exterior.jpg",imgInterior:HOUSE_BASE+"Stormcrest%20castle/Stormcrest%20castle%20interior.jpg"},
+  {id:11,name:"Void Observatory",rank:12,cost:18000000,buff:{type:"powerAffinity",value:0.28},desc:"+28% Power Affinity",
+   imgExterior:HOUSE_BASE+"Void%20observatory/Void%20observatory%20exterior.jpg",imgInterior:HOUSE_BASE+"Void%20observatory/Void%20observatory%20interior.jpg"},
+  {id:12,name:"Celestial Lotus Palace",rank:13,cost:40000000,buff:{type:"intimacy",value:0.30},desc:"+30% Intimacy",
+   imgExterior:HOUSE_BASE+"Celestial%20lotus%20palace/Celestial%20lotus%20palace%20exterior.jpg",imgInterior:HOUSE_BASE+"Celestial%20lotus%20palace/Celestial%20lotus%20palace%20interior.jpg"},
+  {id:13,name:"Abyssal Sovereign Hall",rank:14,cost:90000000,buff:{type:"powerAffinity",value:0.35},desc:"+35% Power Affinity",
+   imgExterior:HOUSE_BASE+"Abyssal%20soverign%20hall/Abyssal%20sovereign%20hall%20exterior.jpg",imgInterior:HOUSE_BASE+"Abyssal%20soverign%20hall/Abyssal%20sovereign%20hall%20interior.jpg"},
+  {id:14,name:"Eternal World Throne",rank:15,cost:200000000,buff:{type:"influence",value:0.40},desc:"+40% Influence",
+   imgExterior:HOUSE_BASE+"Eternal%20world%20throne/Eternal%20world%20throne%20exterior.jpg",imgInterior:HOUSE_BASE+"Eternal%20world%20throne/Eternal%20world%20throne%20interior.jpg"}
+];
+
+function getActiveHouseBuff(type) {
+  if (state.activeHouse == null || state.activeHouse < 0) return 0;
+  const h = HOUSES.find(x => x.id === state.activeHouse);
+  if (!h || !h.buff || h.buff.type !== type) return 0;
+  const owned = state.houses && state.houses[state.activeHouse] && state.houses[state.activeHouse].owned;
+  if (!owned) return 0;
+  return h.buff.value || 0;
+}
+
+/* END DATA CHUNK A — Module 01 continues in next paste if split; otherwise continue below */
+
+const BUSINESSES = [
+  {id:0,name:"Street Food Stall",rank:1,cost:800,baseIncome:2.5,maxLevel:20},
+  {id:1,name:"Herb Stall",rank:2,cost:3500,baseIncome:7,maxLevel:20},
+  {id:2,name:"General Store",rank:3,cost:12000,baseIncome:18,maxLevel:20},
+  {id:3,name:"Adventurer Guild",rank:4,cost:45000,baseIncome:0,maxLevel:5,isGuild:true,desc:"Jobs for materials."},
+  {id:4,name:"Blacksmith Forge",rank:5,cost:110000,baseIncome:55,maxLevel:20},
+  {id:5,name:"Magic Curio Shop",rank:6,cost:280000,baseIncome:120,maxLevel:20},
+  {id:6,name:"Tavern & Inn",rank:7,cost:650000,baseIncome:260,maxLevel:20},
+  {id:7,name:"Trading Company",rank:8,cost:1500000,baseIncome:580,maxLevel:20},
+  {id:8,name:"Mercenary Barracks",rank:9,cost:3800000,baseIncome:1250,maxLevel:20},
+  {id:9,name:"Arcane Academy Branch",rank:10,cost:9500000,baseIncome:2800,maxLevel:20},
+  {id:10,name:"Interdimensional Bazaar",rank:11,cost:25000000,baseIncome:6500,maxLevel:20},
+  {id:11,name:"Celestial Auction House",rank:12,cost:75000000,baseIncome:16000,maxLevel:15}
+];
+
+const GUILD_JOBS = [
+  {id:"wolf_hunt",name:"Wolf Pack Hunt",cost:1200,duration:45,successChance:0.92,rewards:{wolf_pelt:[3,6],wood:[4,8]},minGuild:1},
+  {id:"spider_purge",name:"Cave Spider Purge",cost:2800,duration:75,successChance:0.85,rewards:{spider_silk:[2,5],iron_ore:[3,6]},minGuild:2},
+  {id:"frost_patrol",name:"Frost Peak Patrol",cost:6500,duration:120,successChance:0.78,rewards:{ice_crystal:[2,4],mithril_ore:[1,2]},minGuild:3},
+  {id:"ashen_raid",name:"Ashen Caldera Raid",cost:14000,duration:180,successChance:0.70,rewards:{fire_essence:[2,4],obsidian:[2,3]},minGuild:4},
+  {id:"abyss_dive",name:"Abyssal Depths Dive",cost:32000,duration:300,successChance:0.60,rewards:{abyss_shard:[1,2],void_crystal:[1,1]},minGuild:5}
+];
+
+const MOUNTS = [
+  {id:"white_stallion",name:"White Stallion",img:MOUNT_IMG+"White%20stallion.jpg",rank:1,cost:5000,desc:"Cosmetic.",unlock:{story:true},merchant:false},
+  {id:"armored_warhorse",name:"Armored Warhorse",img:MOUNT_IMG+"Armoured%20warhorse.jpg",rank:2,cost:25000,unlock:{money:25000},merchant:false},
+  {id:"direwolf",name:"Direwolf",img:MOUNT_IMG+"Direwolf.jpg",rank:3,cost:75000,unlock:{money:75000},merchant:false},
+  {id:"griffon",name:"Griffon",img:MOUNT_IMG+"Griffon.jpg",rank:4,cost:200000,unlock:{money:200000},merchant:false},
+  {id:"frost_wyvern",name:"Frost Wyvern",img:MOUNT_IMG+"Frost%20wyvern.jpg",rank:5,cost:500000,unlock:{money:500000},merchant:false},
+  {id:"shadow_panther",name:"Shadow Panther",img:MOUNT_IMG+"Shadow%20panther.jpg",rank:6,cost:1200000,unlock:{money:1200000},merchant:false},
+  {id:"blazing_phoenix",name:"Blazing Phoenix",img:MOUNT_IMG+"Blazing%20phoenix.jpg",rank:7,cost:3000000,unlock:{money:3000000},merchant:false},
+  {id:"celestial_unicorn",name:"Celestial Unicorn",img:MOUNT_IMG+"Celestial%20unicorn.jpg",rank:8,cost:7000000,unlock:{money:7000000},merchant:false},
+  {id:"void_drake",name:"Void Drake",img:MOUNT_IMG+"Void%20drake.jpg",rank:9,cost:12000000,unlock:{money:12000000},merchant:false},
+  {id:"solar_dragon",name:"Solar Dragon",img:MOUNT_IMG+"Solar%20dragon.jpg",rank:10,cost:15000000,unlock:{merchant:true},merchant:true},
+  {id:"primordial_beast",name:"Primordial Beast",img:MOUNT_IMG+"Primordial%20beast.jpg",rank:11,cost:30000000,unlock:{merchant:true},merchant:true}
+];
+
+const STARTER_GEAR = [
+  {id:"starter_sword",name:"Used Iron Sword",cost:350,slot:"weapon",desc:"Tutorial weapon."},
+  {id:"starter_helmet",name:"Worn Leather Cap",cost:180,slot:"head",desc:"Basic head gear."},
+  {id:"starter_gloves",name:"Worn Leather Gloves",cost:160,slot:"hands",desc:"Simple gloves."},
+  {id:"starter_boots",name:"Traveller Boots",cost:180,slot:"feet",desc:"Road-ready."},
+  {id:"starter_chest",name:"Worn Leather Chest",cost:420,slot:"body",desc:"Minimum protection."}
+];
+
+const MAT_BASE = "https://raw.githubusercontent.com/distantsince2002-droid/isekai-images/7b8542bd3e7139047d04374a1511987c7eef48c2/Materials/";
+const MATERIALS = {
+  wood:{name:"Wood",rarity:"common",icon:MAT_BASE+"Common/Wood.png"},
+  herb:{name:"Herb",rarity:"common",icon:MAT_BASE+"Common/Herb.png"},
+  leather:{name:"Leather",rarity:"common",icon:MAT_BASE+"Common/Leather.png"},
+  stone:{name:"Stone",rarity:"common",icon:MAT_BASE+"Common/Stone.png"},
+  iron_ore:{name:"Iron Ore",rarity:"common",icon:MAT_BASE+"Common/Iron%20ore.png"},
+  small_fang:{name:"Small Fang",rarity:"common",icon:MAT_BASE+"Common/Small%20fang.png"},
+  iron_ingot:{name:"Iron Ingot",rarity:"common",icon:MAT_BASE+"Common/Iron%20ingot.png"},
+  wolf_pelt:{name:"Wolf Pelt",rarity:"uncommon",icon:MAT_BASE+"Uncommon/Wolf%20pelt.png"},
+  spider_silk:{name:"Spider Silk",rarity:"uncommon",icon:MAT_BASE+"Uncommon/Spider%20silk.png"},
+  dark_leather:{name:"Dark Leather",rarity:"uncommon",icon:MAT_BASE+"Uncommon/Dark%20leather.png"},
+  shadow_essence:{name:"Shadow Essence",rarity:"uncommon",icon:MAT_BASE+"Uncommon/Shadow%20essence.png"},
+  frost_ore:{name:"Frost Ore",rarity:"uncommon",icon:MAT_BASE+"Uncommon/Frost%20ore.png"},
+  ice_crystal:{name:"Ice Crystal",rarity:"uncommon",icon:MAT_BASE+"Uncommon/Ice%20crystal.png"},
+  yeti_fur:{name:"Yeti Fur",rarity:"uncommon",icon:MAT_BASE+"Uncommon/Yeti%20fur.png"},
+  fang:{name:"Fang",rarity:"uncommon",icon:MAT_BASE+"Uncommon/Fang.png"},
+  steel_ingot:{name:"Steel Ingot",rarity:"uncommon",icon:MAT_BASE+"Uncommon/Steel%20ingot.png"},
+  crystal:{name:"Crystal",rarity:"uncommon",icon:MAT_BASE+"Uncommon/Crystal.png"},
+  healing_potion:{name:"Healing Potion",rarity:"uncommon",icon:MAT_BASE+"Uncommon/Healing%20potion.png"},
+  fire_essence:{name:"Fire Essence",rarity:"uncommon",icon:MAT_BASE+"Uncommon/Fire%20essence.png"},
+  obsidian:{name:"Obsidian",rarity:"uncommon",icon:MAT_BASE+"Uncommon/obsidian.png"},
+  thick_bone:{name:"Thick Bone",rarity:"uncommon",icon:MAT_BASE+"Uncommon/Thick%20bone.png"},
+  ogre_hide:{name:"Ogre Hide",rarity:"uncommon",icon:MAT_BASE+"Uncommon/Ogre%20hide.png"},
+  reinforced_leather:{name:"Reinforced Leather",rarity:"uncommon",icon:MAT_BASE+"Uncommon/Reinforced%20leather.png"},
+  mithril_ore:{name:"Mithril Ore",rarity:"rare",icon:MAT_BASE+"Rare/Mithril%20ore.png"},
+  dark_ore:{name:"Dark Ore",rarity:"rare",icon:MAT_BASE+"Rare/Dark%20ore.png"},
+  dragon_scale:{name:"Dragon Scale",rarity:"rare",icon:MAT_BASE+"Rare/Dragon%20scale.png"},
+  dragon_bone:{name:"Dragon Bone",rarity:"rare",icon:MAT_BASE+"Rare/Dragon%20bone.png"},
+  abyss_shard:{name:"Abyss Shard",rarity:"rare",icon:MAT_BASE+"Rare/Abyss%20shard.png"},
+  void_crystal:{name:"Void Crystal",rarity:"rare",icon:MAT_BASE+"Rare/Void%20crystal.png"},
+  monster_crystal:{name:"Monster Crystal",rarity:"rare",icon:MAT_BASE+"Rare/Monster%20crystal.png"},
+  mithril_ingot:{name:"Mithril Ingot",rarity:"rare",icon:MAT_BASE+"Rare/Mithril%20ingot.png"},
+  shadow_thread:{name:"Shadow Thread",rarity:"rare",icon:"https://raw.githubusercontent.com/distantsince2002-droid/isekai-images/b455cdb38ef5aa46d16cc63af176d61cee3ec1b4/Materials/Rare/Shadow%20thread.png"},
+  star_fragment:{name:"Star Fragment",rarity:"legendary",icon:"https://raw.githubusercontent.com/distantsince2002-droid/isekai-images/2bfb5ba941f5740f8436e90e2c1e45dc26c31483/Materials/Legendary/Star%20fragment.png"},
+  divine_essence:{name:"Divine Essence",rarity:"legendary",icon:"https://raw.githubusercontent.com/distantsince2002-droid/isekai-images/2bfb5ba941f5740f8436e90e2c1e45dc26c31483/Materials/Legendary/Divine%20essence.png"},
+  legendary_ore:{name:"Legendary Ore",rarity:"legendary",icon:"https://raw.githubusercontent.com/distantsince2002-droid/isekai-images/2bfb5ba941f5740f8436e90e2c1e45dc26c31483/Materials/Legendary/Legendary%20ore.png"},
+  celestial_essence:{name:"Celestial Essence",rarity:"legendary",icon:"https://raw.githubusercontent.com/distantsince2002-droid/isekai-images/2bfb5ba941f5740f8436e90e2c1e45dc26c31483/Materials/Legendary/Celestial%20essence.png"},
+  mana_dust:{name:"Mana Dust",rarity:"uncommon",icon:null},
+  phoenix_feather:{name:"Phoenix Feather",rarity:"rare",icon:null},
+  void_shard:{name:"Void Shard",rarity:"rare",icon:null},
+  shadow_crystal:{name:"Shadow Crystal",rarity:"rare",icon:null}
+};
+
+const DUNGEON_IMG = "https://raw.githubusercontent.com/distantsince2002-droid/isekai-images/4589929e4f75b495b0bd5ccccf12b613f7b0fc0c/Dungeon/";
+const DUNGEONS = [
+  {id:"forest",name:"Forest of Beginnings",floors:8,unlockChapter:0,requiresPrestige:0,basePower:40,staminaCost:5,
+   exteriorImg:DUNGEON_IMG+"forest/Forest%20dungeon%20exterior.jpg",interiorImg:DUNGEON_IMG+"forest/Forest%20dungeon%20interior.jpg",
+   lootTable:[{id:"wood",chance:0.80,min:3,max:8},{id:"herb",chance:0.60,min:2,max:5},{id:"leather",chance:0.45,min:1,max:3}]},
+  {id:"cave",name:"Cave of Shadows",floors:10,unlockChapter:2,requiresPrestige:0,basePower:130,staminaCost:8,
+   exteriorImg:DUNGEON_IMG+"cave/Cave%20dungeon%20exterior.jpg",interiorImg:DUNGEON_IMG+"cave/Cave%20dungeon%20interior.jpg",
+   lootTable:[{id:"iron_ore",chance:0.70,min:2,max:6},{id:"leather",chance:0.50,min:1,max:4},{id:"shadow_essence",chance:0.35,min:1,max:2}]},
+  {id:"peak",name:"Frozen Peak",floors:12,unlockChapter:4,requiresPrestige:0,basePower:300,staminaCost:12,
+   exteriorImg:DUNGEON_IMG+"peak/Frozen%20peak%20dungeon%20exterior.jpg",interiorImg:DUNGEON_IMG+"peak/Frozen%20peak%20dungeon%20interior.jpg",
+   lootTable:[{id:"ice_crystal",chance:0.55,min:1,max:3},{id:"mithril_ore",chance:0.30,min:1,max:2},{id:"yeti_fur",chance:0.25,min:1,max:2}]},
+  {id:"dragon",name:"Ancient Dragon Lair",floors:15,unlockChapter:7,requiresPrestige:1,basePower:1050,staminaCost:18,
+   exteriorImg:DUNGEON_IMG+"dragon/Dragon%20dungeon%20exterior.jpg",interiorImg:DUNGEON_IMG+"dragon/Dragon%20dungeon%20interior.jpg",
+   lootTable:[{id:"dragon_scale",chance:0.55,min:1,max:3},{id:"dragon_bone",chance:0.35,min:1,max:2},{id:"void_crystal",chance:0.10,min:1,max:1}]},
+  {id:"rift",name:"The Rift",floors:20,unlockChapter:10,requiresPrestige:2,basePower:2800,staminaCost:25,
+   exteriorImg:DUNGEON_IMG+"Rift/Rift%20dungeon%20exterior.jpg",interiorImg:DUNGEON_IMG+"Rift/Rift%20dungeon%20interior.jpg",
+   lootTable:[{id:"void_crystal",chance:0.45,min:1,max:3},{id:"abyss_shard",chance:0.40,min:1,max:2},{id:"legendary_ore",chance:0.30,min:1,max:2},{id:"star_fragment",chance:0.18,min:1,max:1},{id:"divine_essence",chance:0.12,min:1,max:1}]}
+];
+
+const DIFFICULTY_MODIFIERS = {
+  easy:{powerMult:0.75,rewardMult:0.7,name:"Easy"},
+  normal:{powerMult:1,rewardMult:1,name:"Normal"},
+  hard:{powerMult:1.45,rewardMult:1.4,name:"Hard"},
+  nightmare:{powerMult:2.1,rewardMult:2,name:"Nightmare"}
+};
+
+const STORE_ITEMS = [
+  {id:"tap_boost",name:"Stronger Fingers",key:"tapBoost",type:"upgrade",cost:200,max:100,desc:"+8% Tap per level"},
+  {id:"income_boost",name:"Merchant Instinct",key:"incomeBoost",type:"upgrade",cost:350,max:80,desc:"+6% Income per level"},
+  {id:"kibble_chance",name:"Lucky Bowl",key:"kibbleChance",type:"upgrade",cost:500,max:40,desc:"+2% Kibble chance"},
+  {id:"crit_chance",name:"Lucky Strike",key:"critChance",type:"upgrade",cost:800,max:25,desc:"+1.5% Crit chance"},
+  {id:"gold_rush",name:"Gold Rush Potion",type:"consumable",cost:1500,desc:"x3 Income 3 min",effect:"income",mult:3,dur:180000},
+  {id:"tap_frenzy",name:"Adrenaline Shot",type:"consumable",cost:2200,desc:"x2.5 Tap 2 min",effect:"tap",mult:2.5,dur:120000},
+  {id:"practice_dummy",name:"Practice Dummy",key:"practiceDummy",type:"permanent",cost:8500,max:20,desc:"Automates Stamina leveling."},
+  {id:"training_apparatus",name:"Training Magical Apparatus",key:"trainingApparatus",type:"permanent",cost:12000,max:20,desc:"Automates Mana leveling."}
+];
+
+const PRESTIGE_UPGRADES = [
+  {id:"p_tap",name:"Eternal Tap",cost:5,max:20,key:"pTap",desc:"+5% Tap forever"},
+  {id:"p_income",name:"Eternal Income",cost:5,max:20,key:"pIncome",desc:"+5% Income forever"},
+  {id:"p_start",name:"Better Start",cost:8,max:10,key:"pStart",desc:"+500 starting gold"},
+  {id:"p_kibble",name:"Kibble Mastery",cost:6,max:10,key:"pKibble",desc:"+3% Kibble chance"},
+  {id:"p_money",name:"Money Mastery",cost:8,max:15,key:"pMoney",desc:"+5% permanent money mult"},
+  {id:"p_res",name:"Resource Sense",cost:8,max:15,key:"pRes",desc:"+5% permanent resource mult"},
+  {id:"p_intim",name:"Heart Bond",cost:10,max:12,key:"pIntim",desc:"+5% permanent intimacy mult"}
+];
+
+const CRAFTING_RECIPES = [
+  {id:"reinforced_leather",name:"Reinforced Leather",materials:{wolf_pelt:5,wood:8},result:{reinforced_leather:1}},
+  {id:"iron_ingot",name:"Iron Ingot",materials:{iron_ore:5},result:{iron_ingot:1}},
+  {id:"steel_ingot",name:"Steel Ingot",materials:{iron_ore:8,iron_ingot:2},result:{steel_ingot:1}},
+  {id:"healing_potion",name:"Healing Potion",materials:{herb:6,wood:2},result:{healing_potion:1}},
+  {id:"shadow_thread",name:"Shadow Thread",materials:{spider_silk:4,shadow_essence:2},result:{shadow_thread:1}},
+  {id:"mithril_ingot",name:"Mithril Ingot",materials:{mithril_ore:4,steel_ingot:1},result:{mithril_ingot:1}}
+];
+
+const CHALLENGE_POOL = [
+  {id:"dates",name:"Social Butterfly",desc:"Go on 3 dates",target:3,key:"dates"},
+  {id:"upgrades",name:"Self Improvement",desc:"Purchase 8 upgrades",target:8,key:"upgrades"},
+  {id:"nodes",name:"Pathfinder",desc:"Progress 3 story nodes",target:3,key:"nodes"},
+  {id:"dungeon",name:"Dungeon Clear",desc:"Fully clear a dungeon",target:1,key:"dungeonClear"},
+  {id:"tame_evo",name:"Bond of Beasts",desc:"Evolve a tame once",target:1,key:"tameEvo"},
+  {id:"craft",name:"Artisan",desc:"Craft 6 items",target:6,key:"craft"},
+  {id:"boost",name:"Power Surge",desc:"Buy a store boost",target:1,key:"boost"},
+  {id:"all",name:"Completionist",desc:"Finish the other daily challenges",target:4,key:"allDone"}
+];
+
+const ACHIEVEMENTS = [
+  {id:"first_money",name:"First Steps",desc:"Earn 1,000 gold",check:()=>state.money>=1000},
+  {id:"first_companion",name:"Not Alone",desc:"Unlock a Companion",check:()=>Object.values(state.wives||{}).some(w=>w.unlocked)},
+  {id:"first_tame",name:"Beast Friend",desc:"Own a Tame",check:()=>Object.values(state.pets||{}).some(p=>p.unlocked)},
+  {id:"first_house",name:"Homeowner",desc:"Own a house",check:()=>Object.values(state.houses||{}).some(h=>h.owned)},
+  {id:"first_business",name:"Entrepreneur",desc:"Own a business",check:()=>Object.values(state.businesses||{}).some(b=>b.owned)},
+  {id:"first_prestige",name:"Reincarnated",desc:"Prestige once",check:()=>state.prestige>=1},
+  {id:"five_companions",name:"Harem Beginnings",desc:"Own 5 Companions",check:()=>Object.values(state.wives||{}).filter(w=>w.unlocked).length>=5},
+  {id:"rich",name:"Wealthy Traveler",desc:"Have 100,000 gold",check:()=>state.money>=100000}
+];
+
+const STAMINA_CONFIG = {
+  startingCurrent:100,startingMax:100,startingLevel:1,startingExp:0,startingExpRequired:20,
+  maxPerLevel:8,expPerTap:1,expGrowth:1.18,autoBaseTime:45000,autoTimeGrowth:1.15,autoItemId:"practice_dummy"
+};
+const MANA_CONFIG = {
+  startingCurrent:50,startingMax:50,startingLevel:1,startingExp:0,startingExpRequired:25,
+  maxPerLevel:6,expPerTap:1,expGrowth:1.20,autoBaseTime:60000,autoTimeGrowth:1.18,autoItemId:"training_apparatus"
+};
+
+const RESOURCE_ICONS = {
+  gold:"https://raw.githubusercontent.com/distantsince2002-droid/isekai-images/93f4f61788c73477225bf36e38a07c6f45d6c399/Resource%20and%20currency/Gold.png",
+  kibble:"https://raw.githubusercontent.com/distantsince2002-droid/isekai-images/93f4f61788c73477225bf36e38a07c6f45d6c399/Resource%20and%20currency/Kibble.png",
+  prestigePoints:"https://raw.githubusercontent.com/distantsince2002-droid/isekai-images/f82a09e7858f51fc704ac69482bf90c109d855f2/Resource%20and%20currency/Prestige%20points.png",
+  life:"https://raw.githubusercontent.com/distantsince2002-droid/isekai-images/39b3729252d0eb38f71cd4f483200f70cac52322/Resource%20and%20currency/Life.png",
+  stamina:"https://raw.githubusercontent.com/distantsince2002-droid/isekai-images/39b3729252d0eb38f71cd4f483200f70cac52322/Resource%20and%20currency/Stamina.png",
+  mana:"https://raw.githubusercontent.com/distantsince2002-droid/isekai-images/39b3729252d0eb38f71cd4f483200f70cac52322/Resource%20and%20currency/Mana.png",
+  soulFragments:"https://raw.githubusercontent.com/distantsince2002-droid/isekai-images/39b3729252d0eb38f71cd4f483200f70cac52322/Resource%20and%20currency/Soul%20fragments.png"
+};
+
+const SCENERY = "https://raw.githubusercontent.com/distantsince2002-droid/isekai-images/98916b998e6090975f5b41786135354710856a1f/base%20scenery/";
+const STORY_BACKGROUNDS = {
+  "Grasslands": SCENERY + "Grassland%20(base%20scenery).jpg",
+  "Forest": SCENERY + "Forset%20(base%20scenery).jpg",
+  "Ocean": SCENERY + "Ocean%20(base%20scenery).jpg",
+  "Desert": SCENERY + "Desert%20(base%20scenery).jpg",
+  "Void": SCENERY + "Void%20(base%20scenery).jpg",
+  "Under-trove": SCENERY + "Undertrove%20(base%20scenery).jpg",
+  "Dimensional Gate": SCENERY + "Dimensional%20gate%20(base%20scenery).jpg",
+  "Snowy Mountains": SCENERY + "Snowy%20mountains%20(base%20scenery).jpg",
+  "ENDING": SCENERY + "story%20ending%20scene.jpg",
+  "TOWN_PLAZA": SCENERY + "town%20plaza%20(base%20scene).jpg",
+  "STORE_MARKET": SCENERY + "Store%20and%20market%20(base%20scene).jpg"
+};
+
+const PRESTIGE_IMAGES = {
+  shadyMerchantCorner: "https://raw.githubusercontent.com/distantsince2002-droid/isekai-images/7f15b33a9862a58685bf8cd9c8917ce2dc71d307/base%20scenery/Shady%20merchant%20corner%20(base%20scene).jpg",
+  slaveMerchantScene: "https://raw.githubusercontent.com/distantsince2002-droid/isekai-images/7f15b33a9862a58685bf8cd9c8917ce2dc71d307/prestige%20scenery/Slave%20merchant%20scene.jpg",
+  slaveMerchantPortrait: "https://raw.githubusercontent.com/distantsince2002-droid/isekai-images/5a48e7cf986a48190f2b5668c0801686f7d10492/prestige%20scenery/Slave%20merchant%20portrait.png",
+  prestigeReturn: "https://raw.githubusercontent.com/distantsince2002-droid/isekai-images/7f15b33a9862a58685bf8cd9c8917ce2dc71d307/base%20scenery/Prestige%20return%20scene.jpg"
+};
+const CUTSCENE_BACKGROUNDS = {
+  prestigeReturn: PRESTIGE_IMAGES.prestigeReturn,
+  slaveMerchantScene: PRESTIGE_IMAGES.slaveMerchantScene,
+  shadyMerchantCorner: PRESTIGE_IMAGES.shadyMerchantCorner
+};
+
+const SLAVE_MERCHANT_STOCK = [
+  {id:"hana",name:"Hana",cost:48000,type:"companion",refId:5,desc:"Companion"},
+  {id:"zephyr",name:"Zephyr",cost:52000,type:"tame",refId:0,desc:"Tame · merchant only"},
+  {id:"cinder",name:"Cinder",cost:45000,type:"tame",refId:9,desc:"Tame · Ash Phoenix"},
+  {id:"solar_dragon",name:"Solar Dragon",cost:15000000,type:"mount",refId:"solar_dragon",desc:"Mount rank 10"},
+  {id:"primordial_beast",name:"Primordial Beast",cost:30000000,type:"mount",refId:"primordial_beast",desc:"Mount rank 11"}
+];
+
+/* ARMOUR_RECIPES + WEAPONS loaded fully in Module 05 to keep 01 smaller — stubs for boot */
+const ARMOUR_RECIPES = {};
+const WEAPONS = {};
+
+console.log("Module 01 data shell ready");
+/* === END MODULE 01 — PASTE MODULE 02 IMMEDIATELY BELOW (still inside script) === */
+/* ========== MODULE 02 — STATE + SAVE + ACCOUNTS + INVENTORY HELPERS ========== */
+/* PASTE ORDER: after 01, before 03. Do not close the script tag. */
+
+const SAVE_VERSION = 3;
+const ENCRYPTION_PREFIX = "ENC::";
+const MASTER_SECRET = "IsekaiLifeTycoon_Secret_2026";
+
+const defaultState = {
+  money: 500,
+  prestige: 0,
+  prestigePoints: 0,
+  year: 18,
+  day: 1,
+  life: 100,
+  kibble: 15,
+  hero: 0,
+  unlockedHeroes: [0],
+  pendingHeroSelect: false,
+  favWife: -1,
+  activePets: [],
+  activeHouse: -1,
+  activeMount: null,
+  lastTick: Date.now(),
+
+  stamina: typeof STAMINA_CONFIG !== "undefined" ? STAMINA_CONFIG.startingCurrent : 100,
+  staminaMax: typeof STAMINA_CONFIG !== "undefined" ? STAMINA_CONFIG.startingMax : 100,
+  staminaLevel: typeof STAMINA_CONFIG !== "undefined" ? STAMINA_CONFIG.startingLevel : 1,
+  staminaExp: typeof STAMINA_CONFIG !== "undefined" ? STAMINA_CONFIG.startingExp : 0,
+  staminaExpRequired: typeof STAMINA_CONFIG !== "undefined" ? STAMINA_CONFIG.startingExpRequired : 20,
+  hasPracticeDummy: false,
+  staminaAutoEnd: 0,
+
+  mana: typeof MANA_CONFIG !== "undefined" ? MANA_CONFIG.startingCurrent : 50,
+  manaMax: typeof MANA_CONFIG !== "undefined" ? MANA_CONFIG.startingMax : 50,
+  manaLevel: typeof MANA_CONFIG !== "undefined" ? MANA_CONFIG.startingLevel : 1,
+  manaExp: typeof MANA_CONFIG !== "undefined" ? MANA_CONFIG.startingExp : 0,
+  manaExpRequired: typeof MANA_CONFIG !== "undefined" ? MANA_CONFIG.startingExpRequired : 25,
+  hasTrainingApparatus: false,
+  manaAutoEnd: 0,
+
+  playerName: "Traveler",
+  accountLevel: 1,
+  currentAccount: "default",
+
+  pets: {},
+  wives: {},
+  houses: {},
+  businesses: {},
+  mounts: {},
+  inventory: { wood: 8, herb: 5, leather: 2 },
+  giftInventory: {},
+  ownedStarters: {},
+
+  upgrades: { tapBoost: 0, incomeBoost: 0, kibbleChance: 0, critChance: 0, practiceDummy: 0, trainingApparatus: 0 },
+  prestigeUpgrades: { pTap: 0, pIncome: 0, pStart: 0, pKibble: 0, pMoney: 0, pRes: 0, pIntim: 0 },
+
+  guild: { activeJobs: {}, level: 0 },
+  gear: {},
+  armour: {},
+  armourLevels: {},
+  weapon: null,
+  weaponLevels: {},
+  craftingLevel: 0,
+  craftingXP: 0,
+
+  storyProgress: 0,
+  clearedDungeons: [],
+  battleLog: [],
+  dungeonProgress: {},
+  dungeonTier: {},
+  activeDungeon: null,
+  dungeonDifficulty: "normal",
+
+  tempIncomeMult: 1,
+  tempIncomeEnd: 0,
+  tempTapMult: 1,
+  tempTapEnd: 0,
+
+  story: {
+    current: 0,
+    completed: [],
+    charging: null,
+    map: null,
+    extremeMode: false,
+    lastResourceTick: Date.now(),
+    selectedNode: 0,
+    storyCompleted: false,
+    mana: 12,
+    maxMana: 12
+  },
+
+  tutorial: {
+    active: true,
+    step: 0,
+    completed: false,
+    highlighted: null
+  },
+
+  achievements: {},
+  soulFragments: 0,
+  totalGiftsGiven: 0,
+  dailyDates: 0,
+  lastDateDay: "",
+  merchantOwned: {},
+
+  challengeProgress: {},
+  claimedChallenges: {},
+  dailyChallengeIds: [],
+  challengeDate: "",
+  loginStreak: 0,
+  lastLoginDay: "",
+  loginClaimed: {}
+};
+
+let state = structuredClone(defaultState);
+
+/* ---------- AES ---------- */
+async function deriveKey(account) {
+  const enc = new TextEncoder();
+  const keyMaterial = await crypto.subtle.importKey(
+    "raw",
+    enc.encode(MASTER_SECRET + "_" + account),
+    "PBKDF2",
+    false,
+    ["deriveKey"]
+  );
+  return crypto.subtle.deriveKey(
+    {
+      name: "PBKDF2",
+      salt: enc.encode("isekai_salt_v1"),
+      iterations: 100000,
+      hash: "SHA-256"
+    },
+    keyMaterial,
+    { name: "AES-GCM", length: 256 },
+    false,
+    ["encrypt", "decrypt"]
+  );
+}
+
+async function encryptData(data, account) {
+  const key = await deriveKey(account);
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const encoded = new TextEncoder().encode(JSON.stringify(data));
+  const encrypted = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, key, encoded);
+  const combined = new Uint8Array(iv.length + encrypted.byteLength);
+  combined.set(iv, 0);
+  combined.set(new Uint8Array(encrypted), iv.length);
+  let s = "";
+  const chunk = 8192;
+  for (let i = 0; i < combined.length; i += chunk) {
+    s += String.fromCharCode(...combined.subarray(i, i + chunk));
+  }
+  return ENCRYPTION_PREFIX + btoa(s);
+}
+
+async function decryptData(str, account) {
+  if (!str.startsWith(ENCRYPTION_PREFIX)) return JSON.parse(str);
+  const key = await deriveKey(account);
+  const combined = Uint8Array.from(
+    atob(str.slice(ENCRYPTION_PREFIX.length)),
+    c => c.charCodeAt(0)
+  );
+  const iv = combined.slice(0, 12);
+  const data = combined.slice(12);
+  const decrypted = await crypto.subtle.decrypt({ name: "AES-GCM", iv }, key, data);
+  return JSON.parse(new TextDecoder().decode(decrypted));
+}
+
+async function save() {
+  try {
+    const account = state.currentAccount || "default";
+    const payload = { version: SAVE_VERSION, state };
+    localStorage.setItem("isekaiComplete_" + account, await encryptData(payload, account));
+  } catch (e) {
+    console.error("Save failed", e);
+  }
+}
+
+async function load() {
+  const account = state.currentAccount || "default";
+  const raw = localStorage.getItem("isekaiComplete_" + account);
+  if (!raw) return false;
+  try {
+    const data = await decryptData(raw, account);
+    if (data.state) {
+      state = Object.assign(structuredClone(defaultState), data.state);
+      // deep-merge nested objects that assign is shallow on
+      state.upgrades = Object.assign({}, defaultState.upgrades, data.state.upgrades || {});
+      state.prestigeUpgrades = Object.assign({}, defaultState.prestigeUpgrades, data.state.prestigeUpgrades || {});
+      state.story = Object.assign({}, defaultState.story, data.state.story || {});
+      state.tutorial = Object.assign({}, defaultState.tutorial, data.state.tutorial || {});
+      state.guild = Object.assign({}, defaultState.guild, data.state.guild || {});
+    }
+    return true;
+  } catch (e) {
+    console.warn("Load failed", e);
+    return false;
+  }
+}
+
+function resetState() {
+  const account = state.currentAccount || "default";
+  const name = state.playerName || "Traveler";
+  state = structuredClone(defaultState);
+  state.currentAccount = account;
+  state.playerName = name;
+  void save();
+}
+
+/* ---------- Companion / Tame ---------- */
+function getWife(id) {
+  if (!state.wives[id]) {
+    state.wives[id] = {
+      unlocked: false,
+      intimacy: 0,
+      level: 1,
+      affinity: 0,
+      fav: false,
+      lastDate: 0,
+      datesCount: 0,
+      skillPoints: 0,
+      skills: {}
+    };
+  }
+  return state.wives[id];
+}
+
+function getPetProgress(id) {
+  if (!state.pets[id]) {
+    state.pets[id] = { unlocked: false, evo: 0, kibble: 0, affinity: 0 };
+  }
+  return state.pets[id];
+}
+
+function setCompanionUnlocked(id, value = true) {
+  getWife(id).unlocked = !!value;
+}
+
+function setTameUnlocked(id, value = true) {
+  getPetProgress(id).unlocked = !!value;
+}
+
+/* ---------- Inventory ---------- */
+function getMaterialMeta(id) {
+  if (typeof MATERIALS !== "undefined" && MATERIALS[id]) return MATERIALS[id];
+  return { name: String(id).replace(/_/g, " "), rarity: "common", icon: null };
+}
+
+function getItemCount(itemId) {
+  return state.inventory?.[itemId] || 0;
+}
+
+function hasItem(itemId, amount = 1) {
+  return getItemCount(itemId) >= amount;
+}
+
+function addItem(id, amount = 1) {
+  if (!id || amount <= 0) return;
+  state.inventory = state.inventory || {};
+  state.inventory[id] = (state.inventory[id] || 0) + amount;
+}
+
+function removeItem(id, amount = 1) {
+  if (!id || amount <= 0) return false;
+  state.inventory = state.inventory || {};
+  if ((state.inventory[id] || 0) < amount) return false;
+  state.inventory[id] -= amount;
+  if (state.inventory[id] <= 0) delete state.inventory[id];
+  return true;
+}
+
+function applyLoot(loot) {
+  if (!loot) return;
+  state.inventory = state.inventory || {};
+  for (const [id, amount] of Object.entries(loot)) {
+    if (amount > 0) state.inventory[id] = (state.inventory[id] || 0) + amount;
+  }
+}
+
+function hasMaterials(mats, mult = 1) {
+  if (!mats) return true;
+  state.inventory = state.inventory || {};
+  return Object.entries(mats).every(([m, a]) => (state.inventory[m] || 0) >= a * mult);
+}
+
+function consumeMaterials(mats, mult = 1) {
+  if (!hasMaterials(mats, mult)) return false;
+  for (const [m, a] of Object.entries(mats)) {
+    state.inventory[m] -= a * mult;
+    if (state.inventory[m] <= 0) delete state.inventory[m];
+  }
+  return true;
+}
+
+function formatLoot(loot) {
+  if (!loot || !Object.keys(loot).length) return "nothing";
+  return Object.entries(loot)
+    .filter(([, n]) => n > 0)
+    .map(([id, n]) => n + "× " + getMaterialMeta(id).name)
+    .join(", ");
+}
+
+function getSortedInventoryEntries() {
+  const inv = state.inventory || {};
+  const rarityOrder = { common: 1, uncommon: 2, rare: 3, legendary: 4 };
+  return Object.entries(inv)
+    .filter(([, amount]) => amount > 0)
+    .sort((a, b) => {
+      const ra = rarityOrder[getMaterialMeta(a[0]).rarity] || 0;
+      const rb = rarityOrder[getMaterialMeta(b[0]).rarity] || 0;
+      if (rb !== ra) return rb - ra;
+      return b[1] - a[1];
+    });
+}
+
+/* ---------- House state helpers (ownership lives in state) ---------- */
+function ensureHouseState(id) {
+  if (!state.houses) state.houses = {};
+  if (!state.houses[id]) state.houses[id] = { owned: false };
+  return state.houses[id];
+}
+
+function isHouseOwned(id) {
+  return !!(state.houses && state.houses[id] && state.houses[id].owned);
+}
+
+/* ---------- Accounts ---------- */
+function getAccountList() {
+  try {
+    return JSON.parse(localStorage.getItem("isekai_accounts") || '["default"]');
+  } catch {
+    return ["default"];
+  }
+}
+
+function saveAccountList(list) {
+  localStorage.setItem("isekai_accounts", JSON.stringify(list));
+}
+
+function createAccount(name) {
+  name = (name || "").trim().toLowerCase().replace(/\s+/g, "_");
+  if (!name) return false;
+  const list = getAccountList();
+  if (list.includes(name)) return false;
+  list.push(name);
+  saveAccountList(list);
+  return true;
+}
+
+async function switchAccount(name) {
+  await save();
+  state.currentAccount = name;
+  const ok = await load();
+  if (!ok) {
+    state = structuredClone(defaultState);
+    state.currentAccount = name;
+    state.playerName = name === "default" ? "Traveler" : name;
+  }
+  await save();
+  if (typeof render === "function") render();
+  if (typeof toast === "function") toast("Logged in as " + state.playerName);
+}
+
+function deleteCurrentAccount() {
+  const name = state.currentAccount || "default";
+  if (name === "default") {
+    if (typeof toast === "function") toast("Cannot delete default account");
+    return;
+  }
+  if (!confirm('Delete account "' + name + '" permanently?')) return;
+  saveAccountList(getAccountList().filter(a => a !== name));
+  localStorage.removeItem("isekaiComplete_" + name);
+  void switchAccount("default");
+}
+
+function exportSave() {
+  const payload = {
+    version: SAVE_VERSION,
+    exportedAt: new Date().toISOString(),
+    account: state.currentAccount,
+    state
+  };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "Isekai_" + (state.currentAccount || "default") + "_" + Date.now() + ".json";
+  a.click();
+  if (typeof toast === "function") toast("Save exported");
+}
+
+function triggerImport() {
+  const input = document.createElement("input");
+  input.type = "file";
+  input.accept = ".json,application/json";
+  input.onchange = e => {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = async ev => {
+      try {
+        const data = JSON.parse(ev.target.result);
+        if (!data.state) {
+          if (typeof toast === "function") toast("Invalid save file");
+          return;
+        }
+        if (!confirm("Overwrite current account save?")) return;
+        state = Object.assign(structuredClone(defaultState), data.state);
+        await save();
+        if (typeof render === "function") render();
+        if (typeof toast === "function") toast("Save imported");
+        if (typeof closeModal === "function") closeModal();
+      } catch {
+        if (typeof toast === "function") toast("Import failed");
+      }
+    };
+    reader.readAsText(file);
+  };
+  input.click();
+}
+
+/* ---------- Profile counts ---------- */
+function getCompanionCount() {
+  return Object.values(state.wives || {}).filter(w => w.unlocked).length;
+}
+function getTameCount() {
+  return Object.values(state.pets || {}).filter(p => p.unlocked).length;
+}
+function getMountCount() {
+  return Object.values(state.mounts || {}).filter(m => m.owned).length;
+}
+function getHouseCount() {
+  return Object.values(state.houses || {}).filter(h => h.owned).length;
+}
+function getBusinessCount() {
+  return Object.values(state.businesses || {}).filter(b => b.owned).length;
+}
+
+/* ---------- Achievements ---------- */
+function checkAchievements() {
+  if (typeof ACHIEVEMENTS === "undefined") return;
+  let any = false;
+  ACHIEVEMENTS.forEach(a => {
+    if (!state.achievements[a.id] && a.check()) {
+      state.achievements[a.id] = { unlocked: true, date: Date.now() };
+      any = true;
+      if (typeof toast === "function") toast("Achievement: " + a.name);
+      playAchievementSound();
+    }
+  });
+  if (any) void save();
+}
+
+function playAchievementSound() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.type = "sine";
+    osc.frequency.setValueAtTime(880, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(1320, ctx.currentTime + 0.1);
+    gain.gain.setValueAtTime(0.25, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.35);
+    osc.start();
+    osc.stop(ctx.currentTime + 0.35);
+  } catch (_) {}
+}
+
+/* ---------- Battle log ---------- */
+function addToBattleLog(msg) {
+  state.battleLog = state.battleLog || [];
+  state.battleLog.unshift(msg);
+  if (state.battleLog.length > 30) state.battleLog.pop();
+}
+
+function clearBattleLog() {
+  state.battleLog = [];
+  if (typeof renderDungeon === "function") renderDungeon();
+  void save();
+}
+
+/* Soft autosave (main also saves) */
+setInterval(() => void save(), 30000);
+window.addEventListener("beforeunload", () => { void save(); });
+
+window.state = state;
+window.save = save;
+window.load = load;
+window.resetState = resetState;
+window.getWife = getWife;
+window.getPetProgress = getPetProgress;
+window.setCompanionUnlocked = setCompanionUnlocked;
+window.setTameUnlocked = setTameUnlocked;
+window.applyLoot = applyLoot;
+window.hasItem = hasItem;
+window.getItemCount = getItemCount;
+window.addItem = addItem;
+window.removeItem = removeItem;
+window.hasMaterials = hasMaterials;
+window.consumeMaterials = consumeMaterials;
+window.formatLoot = formatLoot;
+window.getMaterialMeta = getMaterialMeta;
+window.getSortedInventoryEntries = getSortedInventoryEntries;
+window.getAccountList = getAccountList;
+window.createAccount = createAccount;
+window.switchAccount = switchAccount;
+window.deleteCurrentAccount = deleteCurrentAccount;
+window.exportSave = exportSave;
+window.triggerImport = triggerImport;
+window.checkAchievements = checkAchievements;
+window.getCompanionCount = getCompanionCount;
+window.getTameCount = getTameCount;
+window.getMountCount = getMountCount;
+window.getHouseCount = getHouseCount;
+window.getBusinessCount = getBusinessCount;
+window.addToBattleLog = addToBattleLog;
+window.clearBattleLog = clearBattleLog;
+window.ensureHouseState = ensureHouseState;
+window.isHouseOwned = isHouseOwned;
+
+console.log("Module 02 state ready");
+/* === END MODULE 02 — PASTE MODULE 03 IMMEDIATELY BELOW === */
+/* ========== MODULE 03 — ECONOMY + COMPANIONS + TAMES ========== */
+/* PASTE ORDER: after 02, before 04. Do not close the script tag. */
+
+/* ---------- ECONOMY ---------- */
+let economyDirty = true;
+let cachedIncome = 0.8;
+let cachedTapPower = 1;
+const economyListeners = {};
+
+function onGameEvent(type, cb) {
+  if (!economyListeners[type]) economyListeners[type] = [];
+  economyListeners[type].push(cb);
+}
+function emitGameEvent(type, data) {
+  data = data || {};
+  (economyListeners[type] || []).forEach(fn => {
+    try { fn(data); } catch (e) { console.warn("Economy event error", type, e); }
+  });
+}
+function markEconomyDirty() {
+  economyDirty = true;
+  emitGameEvent("economy:dirty");
+}
+
+function getPrestigeMoneyMult() {
+  return 1 + (state.prestige || 0) * 0.25 + (state.prestigeUpgrades?.pMoney || 0) * 0.05;
+}
+function getPrestigeResourceMult() {
+  return 1 + (state.prestige || 0) * 0.20 + (state.prestigeUpgrades?.pRes || 0) * 0.05;
+}
+function getPrestigeIntimacyMult() {
+  return 1 + (state.prestige || 0) * 0.30 + (state.prestigeUpgrades?.pIntim || 0) * 0.05;
+}
+
+/** Map data buff {type,value} → multipliers for economy */
+function getActiveHouseBuffs() {
+  const out = { businessIncome: 1, intimacy: 1, powerAffinity: 1, influence: 1 };
+  if (state.activeHouse == null || state.activeHouse < 0) return out;
+  if (!isHouseOwned(state.activeHouse)) return out;
+  const h = typeof HOUSES !== "undefined" ? HOUSES.find(x => x.id === state.activeHouse) : null;
+  if (!h || !h.buff) return out;
+  const v = h.buff.value || 0;
+  if (h.buff.type === "business") out.businessIncome = 1 + v;
+  if (h.buff.type === "intimacy") out.intimacy = 1 + v;
+  if (h.buff.type === "powerAffinity") out.powerAffinity = 1 + v;
+  if (h.buff.type === "influence") out.influence = 1 + v;
+  return out;
+}
+
+function getBusinessIncome(id) {
+  if (typeof BUSINESSES === "undefined") return 0;
+  const b = BUSINESSES.find(x => x.id === id);
+  const s = state.businesses && state.businesses[id];
+  if (!b || !s || !s.owned || b.isGuild) return 0;
+  let inc = b.baseIncome * (1 + (s.level || 0) * 0.12) * getPrestigeMoneyMult();
+  const hb = getActiveHouseBuffs();
+  if (hb.businessIncome) inc *= hb.businessIncome;
+  return inc;
+}
+function totalBusinessIncome() {
+  if (typeof BUSINESSES === "undefined") return 0;
+  return BUSINESSES.reduce((sum, b) => sum + getBusinessIncome(b.id), 0);
+}
+
+function getPairingBonus() {
+  if (typeof PETS === "undefined") return 1;
+  let pairs = 0;
+  const active = state.activePets || [];
+  for (const pet of PETS) {
+    if (!active.includes(pet.id)) continue;
+    if (pet.pairWith && pet.pairWith.some(id => active.includes(id))) pairs++;
+  }
+  return 1 + (0.18 * pairs) / (1 + pairs * 0.08);
+}
+
+function getWeaponPower() {
+  if (!state.weapon || typeof WEAPONS === "undefined") return 0;
+  const w = WEAPONS[state.weapon];
+  if (!w) return 0;
+  const lvl = (state.weaponLevels && state.weaponLevels[state.weapon]) || 0;
+  return Math.floor(w.power * (1 + lvl * 0.15));
+}
+
+function getPlayerPower() {
+  let p = 25 + (state.prestige || 0) * 18 + (state.year || 18) * 3;
+  if (typeof getArmourPower === "function") p += getArmourPower();
+  p += getWeaponPower();
+  p += Object.keys(state.gear || {}).length * 8;
+  (state.activePets || []).forEach(id => {
+    p += 12 + (getPetProgress(id).evo || 0) * 10;
+  });
+  const hb = getActiveHouseBuffs();
+  if (hb.powerAffinity) p *= hb.powerAffinity;
+  return Math.floor(p);
+}
+
+function getSeasonMult() {
+  const m = Math.floor((state.year || 18) * 12) % 12;
+  if (m < 3) return 1.10;
+  if (m < 6) return 1.18;
+  if (m < 9) return 1.15;
+  return 1.22;
+}
+
+function getCompanionIncomeMult() {
+  let mult = 1;
+  Object.values(state.wives || {}).forEach(w => {
+    if (w && w.unlocked) mult *= 1 + ((w.level || 1) - 1) * 0.012;
+  });
+  return mult;
+}
+
+function recalc() {
+  let power = 1
+    + (state.upgrades?.tapBoost || 0) * 0.08
+    + (state.prestigeUpgrades?.pTap || 0) * 0.05
+    + (state.prestige || 0) * 0.15;
+  (state.activePets || []).forEach(id => {
+    power *= 1 + (getPetProgress(id).evo || 0) * 0.055;
+  });
+  power *= getPairingBonus();
+
+  let income = 0.6
+    + (state.upgrades?.incomeBoost || 0) * 0.06
+    + (state.prestigeUpgrades?.pIncome || 0) * 0.05
+    + (state.prestige || 0) * 0.10;
+  (state.activePets || []).forEach(id => {
+    const pr = getPetProgress(id);
+    income += 0.15 + (pr.evo || 0) * 0.12;
+  });
+  income += totalBusinessIncome();
+  income *= getPrestigeMoneyMult();
+
+  const now = Date.now();
+  if (now < (state.tempIncomeEnd || 0)) income *= (state.tempIncomeMult || 1);
+  if (now < (state.tempTapEnd || 0)) power *= (state.tempTapMult || 1);
+
+  const season = getSeasonMult();
+  income *= season;
+  power *= season;
+  const wifeMult = getCompanionIncomeMult();
+  power *= wifeMult;
+  income *= wifeMult * getPairingBonus();
+
+  cachedTapPower = Math.max(1, Math.floor(power));
+  cachedIncome = Math.max(0.1, income);
+  economyDirty = false;
+}
+
+function getTapPower() {
+  if (economyDirty) recalc();
+  return cachedTapPower;
+}
+function getIncome() {
+  if (economyDirty) recalc();
+  return cachedIncome;
+}
+
+function calculateOfflineProgress() {
+  if (!state.lastTick) return null;
+  const now = Date.now();
+  const secondsAway = Math.floor((now - state.lastTick) / 1000);
+  const maxOffline = 12 * 3600;
+  const effective = Math.min(secondsAway, maxOffline);
+  if (economyDirty) recalc();
+  const earnings = cachedIncome * effective * getPrestigeMoneyMult();
+  return { secondsAway, effectiveSeconds: effective, earnings, capped: secondsAway > maxOffline };
+}
+
+function applyOfflineProgress() {
+  const result = calculateOfflineProgress();
+  if (!result || result.earnings <= 0) return null;
+  state.money += result.earnings;
+  state.lastTick = Date.now();
+  const maxLife = 100 + (state.prestige || 0) * 10;
+  state.life = Math.min(maxLife, (state.life || 100) + result.effectiveSeconds / 86400 * 3);
+  markEconomyDirty();
+  return result;
+}
+
+function addChallengeProgress(key, amount) {
+  amount = amount == null ? 1 : amount;
+  if (!state.challengeProgress) state.challengeProgress = {};
+  state.challengeProgress[key] = (state.challengeProgress[key] || 0) + amount;
+}
+
+function tap() {
+  let power = getTapPower();
+  const critChance = 0.05 + (state.upgrades?.critChance || 0) * 0.015;
+  let crit = false;
+  if (Math.random() < critChance) {
+    power = Math.floor(power * 2.1);
+    crit = true;
+  }
+  state.money += power;
+  addChallengeProgress("daily_tap", 1);
+  const kChance = 0.05
+    + (state.upgrades?.kibbleChance || 0) * 0.02
+    + (state.prestigeUpgrades?.pKibble || 0) * 0.03;
+  if (Math.random() < kChance) {
+    state.kibble = (state.kibble || 0) + 1;
+    emitGameEvent("economy:kibbleGained", { amount: 1 });
+  }
+  if (crit && typeof toast === "function") toast("CRIT! +" + power);
+  markEconomyDirty();
+}
+
+function tick() {
+  const now = Date.now();
+  const dt = Math.min((now - (state.lastTick || now)) / 1000, 45);
+  state.lastTick = now;
+  state.money += getIncome() * dt;
+  addChallengeProgress("daily_income", getIncome() * dt);
+
+  state.day = (state.day || 0) + dt / 20;
+  if (state.day >= 30) {
+    state.day = 0;
+    state.year = +(+(state.year || 18) + 0.1).toFixed(1);
+  }
+
+  state.stamina = Math.min(state.staminaMax || 100, (state.stamina || 100) + dt * 0.15);
+
+  if (typeof updateGuildJobs === "function") updateGuildJobs();
+  if (typeof processIdleDungeon === "function") processIdleDungeon();
+  if (typeof storyTick === "function") storyTick();
+  if (typeof checkPetUnlocks === "function") checkPetUnlocks();
+  if (typeof checkCompanionUnlocks === "function") checkCompanionUnlocks();
+  if (typeof checkAchievements === "function") checkAchievements();
+
+  if (Math.random() < 0.0007) {
+    state.life = Math.max(10, (state.life || 100) - 0.12);
+  }
+}
+
+onGameEvent("pet:equipped", () => markEconomyDirty());
+onGameEvent("pet:evolved", () => markEconomyDirty());
+onGameEvent("wife:levelup", () => markEconomyDirty());
+onGameEvent("business:bought", () => markEconomyDirty());
+onGameEvent("business:upgraded", () => markEconomyDirty());
+onGameEvent("house:changed", () => markEconomyDirty());
+onGameEvent("armour:upgraded", () => markEconomyDirty());
+onGameEvent("prestige:up", () => markEconomyDirty());
+
+window.markEconomyDirty = markEconomyDirty;
+window.getTapPower = getTapPower;
+window.getIncome = getIncome;
+window.getPlayerPower = getPlayerPower;
+window.getPrestigeMoneyMult = getPrestigeMoneyMult;
+window.getPrestigeResourceMult = getPrestigeResourceMult;
+window.getPrestigeIntimacyMult = getPrestigeIntimacyMult;
+window.getActiveHouseBuffs = getActiveHouseBuffs;
+window.getBusinessIncome = getBusinessIncome;
+window.totalBusinessIncome = totalBusinessIncome;
+window.recalc = recalc;
+window.tick = tick;
+window.tap = tap;
+window.applyOfflineProgress = applyOfflineProgress;
+window.calculateOfflineProgress = calculateOfflineProgress;
+window.addChallengeProgress = addChallengeProgress;
+window.onGameEvent = onGameEvent;
+window.emitGameEvent = emitGameEvent;
+window.getWeaponPower = getWeaponPower;
+window.getPairingBonus = getPairingBonus;
+window.getSeasonMult = getSeasonMult;
+
+/* ---------- TAMES ---------- */
+const MAX_ACTIVE_TAMES = 3;
+const KIBBLE_PER_FEED = 1;
+const KIBBLE_PROGRESS_PER_FEED = 25;
+const MAX_EVO = 3;
+
+function ensureTameState() {
+  if (!state.pets) state.pets = {};
+  if (!state.activePets) state.activePets = [];
+  if (state.kibble == null) state.kibble = 0;
+}
+
+function getTameDef(id) {
+  return typeof PETS !== "undefined" ? PETS.find(p => p.id === id) || null : null;
+}
+
+function getForm(id) {
+  const p = getTameDef(id);
+  if (!p || !p.forms || !p.forms.length) return { name: "?", type: "", buff: "", img: "" };
+  const pr = getPetProgress(id);
+  const evo = Math.min(pr.evo || 0, p.forms.length - 1);
+  return p.forms[evo];
+}
+
+function tameImg(form, def) {
+  if (form && form.img) return form.img;
+  const seed = (def && def.name) || (form && form.name) || "tame";
+  return "https://api.dicebear.com/9.x/bottts/svg?seed=" + encodeURIComponent(seed);
+}
+
+function checkPetUnlocks() {
+  ensureTameState();
+  if (typeof PETS === "undefined") return;
+  PETS.forEach(p => {
+    const pr = getPetProgress(p.id);
+    if (pr.unlocked) return;
+    const u = p.unlock || {};
+    if (u.merchant) return;
+    let unlock = false;
+    if (u.start) unlock = true;
+    if (u.money != null && (state.money || 0) >= u.money) unlock = true;
+    if (u.prestige != null && (state.prestige || 0) >= u.prestige) unlock = true;
+    if (u.year != null && (state.year || 18) >= u.year) unlock = true;
+    if (u.dungeon != null && (state.clearedDungeons || []).length >= u.dungeon) unlock = true;
+    if (u.story === true && (state.storyProgress || 0) >= 1) unlock = true;
+    if (unlock) {
+      pr.unlocked = true;
+      if (typeof toast === "function") toast((p.name || "Tame") + " can now be tamed!");
+    }
+  });
+}
+
+function unlockTameById(id, announce) {
+  announce = announce !== false;
+  const def = getTameDef(id);
+  const pr = getPetProgress(id);
+  if (pr.unlocked) return false;
+  if (def && def.unlock && def.unlock.merchant) return false;
+  pr.unlocked = true;
+  if (announce && typeof toast === "function") toast((def ? def.name : "Tame") + " has been tamed!");
+  return true;
+}
+
+function unlockTameFromMerchant(id) {
+  const pr = getPetProgress(id);
+  if (pr.unlocked) return false;
+  pr.unlocked = true;
+  return true;
+}
+
+function unlockTameFromStory(id) {
+  const def = getTameDef(id);
+  if (def && def.unlock && def.unlock.merchant) {
+    console.warn("Blocked story unlock of merchant-only tame", id);
+    return false;
+  }
+  return unlockTameById(id, true);
+}
+
+function feedPet(id) {
+  ensureTameState();
+  const def = getTameDef(id);
+  const pr = getPetProgress(id);
+  if (!def || !pr.unlocked) return;
+  if ((state.kibble || 0) < KIBBLE_PER_FEED) {
+    if (typeof toast === "function") toast("No kibble");
+    return;
+  }
+  state.kibble -= KIBBLE_PER_FEED;
+  pr.kibble = (pr.kibble || 0) + KIBBLE_PROGRESS_PER_FEED;
+  pr.affinity = (pr.affinity || 0) + Math.floor(2 * getPrestigeIntimacyMult());
+
+  if ((pr.kibble || 0) >= 100 && (pr.evo || 0) < MAX_EVO) {
+    pr.kibble -= 100;
+    pr.evo = (pr.evo || 0) + 1;
+    addChallengeProgress("tameEvo", 1);
+    emitGameEvent("pet:evolved", { id, evo: pr.evo });
+    const form = getForm(id);
+    if (typeof showModal === "function") {
+      showModal("✦ Evolution ✦", (form.name || def.name) + " evolved to stage " + pr.evo + "!");
+    }
+  }
+  markEconomyDirty();
+  renderTames();
+  if (typeof render === "function") render();
+  void save();
+}
+
+function equipPet(id) {
+  ensureTameState();
+  const pr = getPetProgress(id);
+  if (!pr.unlocked) return;
+  if (!Array.isArray(state.activePets)) state.activePets = [];
+  const idx = state.activePets.indexOf(id);
+  if (idx >= 0) {
+    state.activePets.splice(idx, 1);
+    emitGameEvent("pet:equipped", { id, equipped: false });
+  } else {
+    if (state.activePets.length >= MAX_ACTIVE_TAMES) {
+      if (typeof toast === "function") toast("Max " + MAX_ACTIVE_TAMES + " active tames");
+      return;
+    }
+    state.activePets.push(id);
+    emitGameEvent("pet:equipped", { id, equipped: true });
+  }
+  markEconomyDirty();
+  renderTames();
+  if (typeof render === "function") render();
+  void save();
+}
+
+function isTameActive(id) {
+  return (state.activePets || []).includes(id);
+}
+
+function showTameProfile(id) {
+  const def = getTameDef(id);
+  const pr = getPetProgress(id);
+  if (!def || !pr.unlocked) return;
+  const form = getForm(id);
+  const body =
+    (form.type || "") + " · Evo " + (pr.evo || 0) + "/" + MAX_EVO + "\n" +
+    "Buff: " + (form.buff || "—") + "\n" +
+    "Kibble progress: " + (pr.kibble || 0) + "/100\n" +
+    "Affinity: " + (pr.affinity || 0);
+  if (typeof showModal === "function") {
+    showModal(form.name || def.name, body, [
+      { text: "Feed", action: () => feedPet(id) },
+      { text: isTameActive(id) ? "Unequip" : "Equip", action: () => equipPet(id) },
+      { text: "Close", action: null }
+    ]);
+  }
+}
+
+function resetTameProgressKeepUnlocked() {
+  ensureTameState();
+  Object.keys(state.pets || {}).forEach(id => {
+    const p = state.pets[id];
+    if (p && p.unlocked) { p.evo = 0; p.kibble = 0; p.affinity = 0; }
+  });
+  state.activePets = [];
+}
+
+function renderTames() {
+  ensureTameState();
+  checkPetUnlocks();
+  const list = document.getElementById("tamesList");
+  if (!list || typeof PETS === "undefined") return;
+  const activeCount = (state.activePets || []).length;
+  let html = '<div class="card"><strong>Active ' + activeCount + '/' + MAX_ACTIVE_TAMES +
+    '</strong><div class="small">Kibble from tapping · Feed to evolve</div></div>';
+
+  PETS.forEach(p => {
+    const pr = getPetProgress(p.id);
+    const u = p.unlock || {};
+    const merchantOnly = !!u.merchant;
+    const eq = isTameActive(p.id);
+    const form = getForm(p.id);
+    if (!pr.unlocked) {
+      html += '<div class="card locked"><strong>???</strong><div class="small">' +
+        (merchantOnly ? "Slave Merchant only" : "Locked") + "</div></div>";
+      return;
+    }
+    const src = tameImg(form, p);
+    const kibPct = Math.min(100, pr.kibble || 0);
+    const fallback = tameImg({}, p);
+    html += '<div class="card ' + (eq ? "equipped" : "") + '"><div class="flex">' +
+      '<img class="pet-img" src="' + src + '" alt="" loading="lazy" onerror="this.onerror=null;this.src=\'' + fallback + '\'"/>' +
+      '<div style="flex:1"><strong>' + (form.name || p.name) + '</strong> ' +
+      '<span class="small">Evo ' + (pr.evo || 0) + '/' + MAX_EVO + '</span>' +
+      (eq ? ' <span class="tag">ACTIVE</span>' : "") +
+      '<div class="small">' + (form.type || "") + " · " + (form.buff || "") + "</div>" +
+      '<div class="bar"><div class="barFill" style="width:' + kibPct + '%"></div></div>' +
+      '<button type="button" class="btn" onclick="feedPet(' + p.id + ')">Feed</button> ' +
+      '<button type="button" class="btn secondary" onclick="equipPet(' + p.id + ')">' + (eq ? "Unequip" : "Equip") + "</button> " +
+      '<button type="button" class="btn secondary" onclick="showTameProfile(' + p.id + ')">Info</button>' +
+      "</div></div></div>";
+  });
+  list.innerHTML = html;
+}
+
+window.getForm = getForm;
+window.feedPet = feedPet;
+window.equipPet = equipPet;
+window.checkPetUnlocks = checkPetUnlocks;
+window.renderTames = renderTames;
+window.showTameProfile = showTameProfile;
+window.unlockTameById = unlockTameById;
+window.unlockTameFromMerchant = unlockTameFromMerchant;
+window.unlockTameFromStory = unlockTameFromStory;
+window.resetTameProgressKeepUnlocked = resetTameProgressKeepUnlocked;
+window.isTameActive = isTameActive;
+window.renderPets = renderTames;
+
+/* ---------- COMPANIONS ---------- */
+const DATE_CD = typeof DATE_COOLDOWN_MS !== "undefined" ? DATE_COOLDOWN_MS : 2 * 60 * 60 * 1000;
+const SF_COST = typeof SOUL_FRAGMENT_COST !== "undefined" ? SOUL_FRAGMENT_COST : 20;
+const SUMMON_NAMES = typeof SPECIAL_SUMMON_NAMES !== "undefined"
+  ? SPECIAL_SUMMON_NAMES
+  : ["Aisha", "Celeste", "Elowen", "Nia", "Raven", "Sophia", "Yuki", "Zara"];
+const MAX_DAILY_DATES = 8;
+const BASE_DATE_INTIMACY = 30;
+
+const COMPANION_GIFTS = [
+  { id: "flower", name: "Wildflower Bouquet", cost: 400, intimacy: 10, affinity: 3, rarity: "Common", img: GIFT_IMG + "Wild%20flower%20bouquet.png" },
+  { id: "chocolate", name: "Dark Chocolate Box", cost: 600, intimacy: 15, affinity: 4, rarity: "Common", img: GIFT_IMG + "Dark%20chocolate%20box.png" },
+  { id: "honey", name: "Honey Candy Box", cost: 750, intimacy: 18, affinity: 5, rarity: "Uncommon", img: GIFT_IMG + "Honey%20candy%20box.png" },
+  { id: "perfume", name: "Enchanted Perfume", cost: 1200, intimacy: 22, affinity: 7, rarity: "Uncommon", img: GIFT_IMG + "Enchanted%20perfume.png" },
+  { id: "scarf", name: "Silk Scarf", cost: 1500, intimacy: 25, affinity: 8, rarity: "Uncommon", img: GIFT_IMG + "Silk%20scarf.png" },
+  { id: "tea", name: "Moonlit Tea Set", cost: 2000, intimacy: 28, affinity: 10, rarity: "Rare", img: GIFT_IMG + "Moonlit%20tea%20set.png" },
+  { id: "pendant", name: "Moonstone Pendant", cost: 2800, intimacy: 35, affinity: 12, rarity: "Rare", img: GIFT_IMG + "Moonstone%20pendant.png" },
+  { id: "bracelet", name: "Starlight Bracelet", cost: 3200, intimacy: 38, affinity: 14, rarity: "Rare", img: GIFT_IMG + "Starlight%20bracelet.png" },
+  { id: "musicbox", name: "Crystal Music Box", cost: 4500, intimacy: 45, affinity: 16, rarity: "Epic", img: GIFT_IMG + "Crystal%20music%20box.png" },
+  { id: "heart", name: "Heart of the Realm", cost: 6500, intimacy: 55, affinity: 20, rarity: "Epic", img: GIFT_IMG + "Heart%20of%20the%20realm.png" },
+  { id: "ring", name: "Eternal Promise Ring", cost: 8000, intimacy: 60, affinity: 22, rarity: "Legendary", img: GIFT_IMG + "Eternal%20promise%20ring.png" },
+  { id: "crown", name: "Celestial Flower Crown", cost: 9500, intimacy: 65, affinity: 25, rarity: "Legendary", img: GIFT_IMG + "Celestial%20flower%20crown.png" },
+  { id: "gem", name: "Soulbound Gem", cost: 12000, intimacy: 75, affinity: 30, rarity: "Legendary", img: GIFT_IMG + "Soul%20bound%20gem.png" },
+  { id: "token", name: "Divine Affection Token", cost: 15000, intimacy: 90, affinity: 40, rarity: "Mythic", img: GIFT_IMG + "Divine%20affection%20token.png" }
+];
+
+const COMPANION_PREFERENCES = {
+  0: { loved: ["flower", "tea"], disliked: ["token", "gem"] },
+  1: { loved: ["chocolate", "perfume"], disliked: ["honey"] },
+  2: { loved: ["pendant", "crown"], disliked: ["chocolate"] },
+  3: { loved: ["tea", "flower"], disliked: ["ring"] },
+  4: { loved: ["scarf", "bracelet"], disliked: ["honey"] },
+  5: { loved: ["honey", "chocolate"], disliked: ["token"] },
+  6: { loved: ["flower", "crown"], disliked: ["gem"] },
+  7: { loved: ["pendant", "tea"], disliked: ["chocolate"] },
+  8: { loved: ["bracelet", "scarf"], disliked: ["perfume"] },
+  9: { loved: ["musicbox", "flower"], disliked: ["token"] },
+  10: { loved: ["pendant", "ring"], disliked: ["honey"] },
+  11: { loved: ["crown", "tea"], disliked: ["chocolate"] },
+  12: { loved: ["gem", "musicbox"], disliked: ["flower"] },
+  13: { loved: ["heart", "ring"], disliked: ["honey"] },
+  14: { loved: ["scarf", "bracelet"], disliked: ["perfume"] },
+  15: { loved: ["chocolate", "perfume"], disliked: ["gem"] },
+  16: { loved: ["heart", "token"], disliked: ["flower"] },
+  17: { loved: ["ring", "pendant"], disliked: ["honey"] },
+  18: { loved: ["token", "gem"], disliked: ["chocolate"] },
+  19: { loved: ["perfume", "scarf"], disliked: ["honey"] },
+  20: { loved: ["crown", "tea"], disliked: ["token"] },
+  21: { loved: ["bracelet", "musicbox"], disliked: ["perfume"] },
+  22: { loved: ["gem", "pendant"], disliked: ["honey"] },
+  23: { loved: ["flower", "honey"], disliked: ["token"] },
+  24: { loved: ["heart", "ring"], disliked: ["chocolate"] }
+};
+
+function ensureGiftInventory() {
+  if (!state.giftInventory) state.giftInventory = {};
+  COMPANION_GIFTS.forEach(g => {
+    if (state.giftInventory[g.id] === undefined) state.giftInventory[g.id] = 0;
+  });
+}
+
+function ensureCompanionState() {
+  if (!state.wives) state.wives = {};
+  if (typeof WIVES !== "undefined") {
+    WIVES.forEach(def => { getWife(def.id); });
+  }
+  if (state.favWife === undefined) state.favWife = -1;
+  if (state.dailyDates === undefined) state.dailyDates = 0;
+  if (state.lastDateDay === undefined) state.lastDateDay = "";
+  ensureGiftInventory();
+}
+
+function getGift(id) {
+  return COMPANION_GIFTS.find(g => g.id === id) || null;
+}
+
+function buyGift(giftId, qty) {
+  qty = qty || 1;
+  const gift = getGift(giftId);
+  if (!gift) return false;
+  const total = gift.cost * qty;
+  if (state.money < total) {
+    if (typeof toast === "function") toast("Not enough gold");
+    return false;
+  }
+  state.money -= total;
+  ensureGiftInventory();
+  state.giftInventory[giftId] = (state.giftInventory[giftId] || 0) + qty;
+  if (typeof toast === "function") toast("Bought " + qty + "× " + gift.name);
+  markEconomyDirty();
+  void save();
+  if (typeof render === "function") render();
+  return true;
+}
+
+function giftCompanion(companionId, giftId) {
+  const w = getWife(companionId);
+  if (!w || !w.unlocked) {
+    if (typeof toast === "function") toast("Companion not unlocked");
+    return false;
+  }
+  const gift = getGift(giftId);
+  if (!gift) return false;
+  ensureGiftInventory();
+  if ((state.giftInventory[giftId] || 0) < 1) {
+    if (typeof toast === "function") toast("You don't own this gift");
+    return false;
+  }
+  const prefs = COMPANION_PREFERENCES[companionId] || { loved: [], disliked: [] };
+  let mult = 1.0;
+  let rejected = false;
+  if (prefs.loved.includes(giftId)) mult = 1.8;
+  else if (prefs.disliked.includes(giftId)) {
+    mult = 0.4;
+    if (Math.random() < 0.70) rejected = true;
+  }
+  state.giftInventory[giftId]--;
+  const def = typeof WIVES !== "undefined" ? WIVES.find(x => x.id === companionId) : null;
+  if (rejected) {
+    if (typeof toast === "function") toast((def ? def.name : "Companion") + " refused the " + gift.name + "…");
+    void save();
+    return false;
+  }
+  const prestigeMult = getPrestigeIntimacyMult();
+  const houseIntimacy = getActiveHouseBuffs().intimacy || 1;
+  const intimacyGain = Math.floor(gift.intimacy * mult * prestigeMult * houseIntimacy);
+  const affinityGain = Math.floor(gift.affinity * mult);
+  w.intimacy = (w.intimacy || 0) + intimacyGain;
+  w.affinity = (w.affinity || 0) + affinityGain;
+  while (w.intimacy >= 100) {
+    w.intimacy -= 100;
+    w.level = (w.level || 1) + 1;
+    w.skillPoints = (w.skillPoints || 0) + 1;
+    emitGameEvent("wife:levelup", { id: companionId });
+  }
+  state.totalGiftsGiven = (state.totalGiftsGiven || 0) + 1;
+  addChallengeProgress("gift", 1);
+  if (typeof toast === "function") {
+    toast((def ? def.name : "Companion") + " (+" + intimacyGain + " intimacy)");
+  }
+  markEconomyDirty();
+  void save();
+  if (typeof renderCompanions === "function") renderCompanions();
+  if (typeof render === "function") render();
+  return true;
+}
+
+function openGiftSelector(companionId) {
+  const w = getWife(companionId);
+  if (!w || !w.unlocked) return;
+  ensureGiftInventory();
+  const def = typeof WIVES !== "undefined" ? WIVES.find(x => x.id === companionId) : null;
+  const name = def ? def.name : "Companion";
+  let html = '<div style="max-height:65vh;overflow-y:auto;padding:8px"><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px">';
+  COMPANION_GIFTS.forEach(g => {
+    const count = state.giftInventory[g.id] || 0;
+    const prefs = COMPANION_PREFERENCES[companionId] || { loved: [], disliked: [] };
+    let tag = "";
+    if (prefs.loved.includes(g.id)) tag = '<div style="color:#4caf50;font-size:11px">★ Loved</div>';
+    else if (prefs.disliked.includes(g.id)) tag = '<div style="color:#e74c3c;font-size:11px">✕ Disliked</div>';
+    html += '<div class="card" style="text-align:center;padding:8px;opacity:' + (count > 0 ? 1 : 0.4) + '">' +
+      '<img src="' + g.img + '" alt="" style="width:48px;height:48px;object-fit:contain" onerror="this.style.display=\'none\'"/>' +
+      '<div style="font-size:11px;font-weight:600">' + g.name + "</div>" + tag +
+      '<div class="small">Owned: <b>' + count + "</b></div>" +
+      '<button type="button" class="btn" style="width:100%;font-size:12px;margin-top:4px" ' + (count < 1 ? "disabled" : "") +
+      ' onclick="giftCompanion(' + companionId + ",'" + g.id + "');closeModal();\">Give</button></div>";
+  });
+  html += "</div></div>";
+  if (typeof showModal === "function") showModal("Gift " + name, html, [{ text: "Close", action: null }]);
+}
+
+function canDateToday() {
+  const today = new Date().toDateString();
+  if (state.lastDateDay !== today) {
+    state.dailyDates = 0;
+    state.lastDateDay = today;
+  }
+  return (state.dailyDates || 0) < MAX_DAILY_DATES;
+}
+
+function dateWife(id) {
+  const w = getWife(id);
+  if (!w || !w.unlocked) return;
+  const now = Date.now();
+  if (w.lastDate && (now - w.lastDate) < DATE_CD) {
+    const remain = Math.ceil((DATE_CD - (now - w.lastDate)) / 60000);
+    if (typeof toast === "function") toast("Date on cooldown (" + remain + " min)");
+    return;
+  }
+  if (!canDateToday()) {
+    if (typeof toast === "function") toast("Daily date limit reached (8)");
+    return;
+  }
+  const prestigeMult = getPrestigeIntimacyMult();
+  const houseIntimacy = getActiveHouseBuffs().intimacy || 1;
+  const intimacyGain = Math.floor(BASE_DATE_INTIMACY * prestigeMult * houseIntimacy);
+  w.intimacy = (w.intimacy || 0) + intimacyGain;
+  w.affinity = (w.affinity || 0) + 9;
+  w.lastDate = now;
+  state.dailyDates = (state.dailyDates || 0) + 1;
+  while (w.intimacy >= 100) {
+    w.intimacy -= 100;
+    w.level = (w.level || 1) + 1;
+    w.skillPoints = (w.skillPoints || 0) + 1;
+  }
+  const def = typeof WIVES !== "undefined" ? WIVES.find(x => x.id === id) : null;
+  if (typeof toast === "function") toast("Date with " + (def ? def.name : "Companion") + " (+" + intimacyGain + ")");
+  addChallengeProgress("dates", 1);
+  markEconomyDirty();
+  void save();
+  renderCompanions();
+  if (typeof render === "function") render();
+}
+
+function favouriteWife(id) {
+  const w = getWife(id);
+  if (!w || !w.unlocked) return;
+  Object.keys(state.wives).forEach(k => { if (state.wives[k]) state.wives[k].fav = false; });
+  w.fav = true;
+  state.favWife = id;
+  if (typeof toast === "function") toast("Favourited!");
+  void save();
+  renderCompanions();
+}
+
+function summonCompanion(id) {
+  const def = typeof WIVES !== "undefined" ? WIVES.find(x => x.id === id) : null;
+  if (!def) return;
+  if (!SUMMON_NAMES.includes(def.name)) {
+    if (typeof toast === "function") toast("Cannot summon this companion");
+    return;
+  }
+  const w = getWife(id);
+  if (w.unlocked) {
+    if (typeof toast === "function") toast(def.name + " already unlocked");
+    return;
+  }
+  if ((state.soulFragments || 0) < SF_COST) {
+    if (typeof toast === "function") toast("Need " + SF_COST + " Soul Fragments");
+    return;
+  }
+  state.soulFragments -= SF_COST;
+  setCompanionUnlocked(id, true);
+  if (typeof toast === "function") toast("Summoned " + def.name + "!");
+  markEconomyDirty();
+  void save();
+  renderCompanions();
+  if (typeof render === "function") render();
+}
+
+function checkCompanionUnlocks() {
+  ensureCompanionState();
+}
+
+function resetCompanionProgressKeepUnlocked() {
+  ensureCompanionState();
+  Object.keys(state.wives || {}).forEach(id => {
+    const w = state.wives[id];
+    if (w && w.unlocked) {
+      w.intimacy = 0;
+      w.level = 1;
+      w.affinity = Math.floor((w.affinity || 0) * 0.2);
+      w.lastDate = 0;
+      w.skillPoints = 0;
+    }
+  });
+}
+
+function showCompanionProfile(id) {
+  const def = typeof WIVES !== "undefined" ? WIVES.find(x => x.id === id) : null;
+  const w = getWife(id);
+  if (!def || !w) return;
+  const html =
+    '<div style="text-align:center">' +
+    '<img src="' + (def.img || "") + '" style="width:120px;height:156px;object-fit:cover;border-radius:12px;border:2px solid var(--accent)" ' +
+    'onerror="this.src=\'https://api.dicebear.com/7.x/avataaars/svg?seed=' + encodeURIComponent(def.name) + '\'"/>' +
+    '<h3 style="margin:8px 0">' + def.name + "</h3>" +
+    '<div class="small">' + (def.race || "") + " · " + (def.buff || "") + "</div>" +
+    "<div>Level <b>" + (w.level || 1) + "</b> · Affinity <b>" + (w.affinity || 0) + "</b></div>" +
+    "<div>Intimacy <b>" + (w.intimacy || 0) + "/100</b></div>" +
+    '<p style="font-size:13px;margin-top:8px">' + (def.lore || "") + "</p></div>";
+  if (typeof showModal === "function") showModal(def.name, html, [{ text: "Close", action: null }]);
+}
+
+function renderCompanions() {
+  ensureCompanionState();
+  const list = document.getElementById("companionsList");
+  if (!list || typeof WIVES === "undefined") return;
+  let html = "";
+  const lockedSummons = WIVES.filter(d => {
+    const w = getWife(d.id);
+    return SUMMON_NAMES.includes(d.name) && !w.unlocked;
+  });
+  if (lockedSummons.length) {
+    html += '<div class="card"><strong>Soul Fragment Summons</strong><div class="small">Cost ' + SF_COST +
+      " · You have " + (state.soulFragments || 0) + '</div><div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px">';
+    lockedSummons.forEach(d => {
+      html += '<button type="button" class="btn secondary" onclick="summonCompanion(' + d.id + ')">' + d.name + "</button>";
+    });
+    html += "</div></div>";
+  }
+  WIVES.forEach(def => {
+    const w = getWife(def.id);
+    const isSummon = SUMMON_NAMES.includes(def.name);
+    if (!w.unlocked && !isSummon) return;
+    const locked = !w.unlocked;
+    const cdLeft = w.lastDate ? Math.max(0, DATE_CD - (Date.now() - w.lastDate)) : 0;
+    const cdMin = Math.ceil(cdLeft / 60000);
+    html += '<div class="card" style="opacity:' + (locked ? 0.55 : 1) + '"><div class="flex">' +
+      '<img class="companion-img" src="' + (def.img || "") + '" alt="" onerror="this.src=\'https://api.dicebear.com/7.x/avataaars/svg?seed=' + encodeURIComponent(def.name) + '\'"/>' +
+      '<div style="flex:1"><strong>' + def.name + "</strong> <span class=\"small\">(" + (def.race || "?") + ")</span>" +
+      (w.fav ? " ★" : "") +
+      '<div class="small">Lv ' + (w.level || 1) + " · Aff " + (w.affinity || 0) + " · " + (def.buff || "") + "</div>" +
+      '<div class="bar"><div class="barFill" style="width:' + Math.min(100, w.intimacy || 0) + '%"></div></div>';
+    if (locked) {
+      html += isSummon
+        ? '<button type="button" class="btn" onclick="summonCompanion(' + def.id + ')">Summon (' + SF_COST + " SF)</button>"
+        : '<button type="button" class="btn" disabled>Locked</button>';
+    } else {
+      html += '<button type="button" class="btn" onclick="openGiftSelector(' + def.id + ')">Gift</button> ' +
+        '<button type="button" class="btn" onclick="dateWife(' + def.id + ')" ' + (cdLeft > 0 ? "disabled" : "") + ">" +
+        (cdLeft > 0 ? "Date (" + cdMin + "m)" : "Date") + "</button> " +
+        '<button type="button" class="btn secondary" onclick="favouriteWife(' + def.id + ')">' + (w.fav ? "★ Fav" : "Favourite") + "</button> " +
+        '<button type="button" class="btn secondary" onclick="showCompanionProfile(' + def.id + ')">Info</button>';
+    }
+    html += "</div></div></div>";
+  });
+  list.innerHTML = html || '<div class="card">No companions available yet.</div>';
+}
+
+window.giftCompanion = giftCompanion;
+window.openGiftSelector = openGiftSelector;
+window.buyGift = buyGift;
+window.dateWife = dateWife;
+window.favouriteWife = favouriteWife;
+window.summonCompanion = summonCompanion;
+window.checkCompanionUnlocks = checkCompanionUnlocks;
+window.renderCompanions = renderCompanions;
+window.showCompanionProfile = showCompanionProfile;
+window.resetCompanionProgressKeepUnlocked = resetCompanionProgressKeepUnlocked;
+window.COMPANION_GIFTS = COMPANION_GIFTS;
+window.renderWives = renderCompanions;
+
+console.log("Module 03 economy + companions + tames ready");
+/* === END MODULE 03 — PASTE MODULE 04 IMMEDIATELY BELOW === */
+/* ========== MODULE 04 — STORE + HOUSES + BUSINESS + GUILD + MOUNTS ========== */
+/* PASTE ORDER: after 03, before 05. Do not close the script tag. */
+
+const STORE_CATALOG = typeof STORE_ITEMS !== "undefined" ? STORE_ITEMS : [];
+const STARTER_CATALOG = typeof STARTER_GEAR !== "undefined" ? STARTER_GEAR : [];
+const MERCHANT_STOCK = typeof SLAVE_MERCHANT_STOCK !== "undefined" ? SLAVE_MERCHANT_STOCK : [];
+
+function getStoreCost(item, level) {
+  level = level || 0;
+  if (item.type === "upgrade" || item.type === "permanent") {
+    return Math.floor(item.cost * Math.pow(1.45, level));
+  }
+  return item.cost;
+}
+
+function unlockStarterGear(item) {
+  if (!item) return;
+  state.gear = state.gear || {};
+  state.gear[item.id] = true;
+  if (item.slot === "weapon") {
+    state.weapon = item.id;
+  } else if (typeof onStarterArmourPurchased === "function") {
+    onStarterArmourPurchased(item.id);
+  } else {
+    state.armour = state.armour || {};
+    state.armourLevels = state.armourLevels || {};
+    state.armour[item.slot] = item.id;
+    state.armourLevels[item.id] = 0;
+  }
+}
+
+function buyStarter(id) {
+  const item = STARTER_CATALOG.find(i => i.id === id);
+  if (!item || (state.money || 0) < item.cost) return;
+  if (state.ownedStarters && state.ownedStarters[item.id]) {
+    if (typeof toast === "function") toast("Already owned");
+    return;
+  }
+  state.money -= item.cost;
+  if (!state.ownedStarters) state.ownedStarters = {};
+  state.ownedStarters[item.id] = true;
+  unlockStarterGear(item);
+  if (typeof toast === "function") toast("Purchased " + item.name);
+  markEconomyDirty();
+  renderStore();
+  if (typeof render === "function") render();
+  void save();
+}
+
+function buyStoreItem(id) {
+  const item = STORE_CATALOG.find(i => i.id === id);
+  if (!item) return;
+  const level = state.upgrades?.[item.key] || 0;
+  const cost = getStoreCost(item, level);
+  if ((state.money || 0) < cost) return;
+  if (item.max && level >= item.max) return;
+  state.money -= cost;
+
+  if (item.type === "consumable") {
+    if (item.effect === "income") {
+      state.tempIncomeMult = item.mult || 2;
+      state.tempIncomeEnd = Date.now() + (item.dur || 60000);
+    } else if (item.effect === "tap") {
+      state.tempTapMult = item.mult || 2;
+      state.tempTapEnd = Date.now() + (item.dur || 60000);
+    }
+    addChallengeProgress("boost", 1);
+    if (typeof toast === "function") toast(item.name + " activated!");
+  } else {
+    if (!state.upgrades) state.upgrades = {};
+    state.upgrades[item.key] = level + 1;
+    if (item.key === "practiceDummy") state.hasPracticeDummy = true;
+    if (item.key === "trainingApparatus") state.hasTrainingApparatus = true;
+    addChallengeProgress("upgrades", 1);
+    markEconomyDirty();
+    if (typeof toast === "function") toast(item.name + " → Lv " + (level + 1));
+  }
+  renderStore();
+  if (typeof render === "function") render();
+  void save();
+}
+
+function buySlave(id) {
+  if ((state.prestige || 0) < 1) {
+    if (typeof toast === "function") toast("Requires first reincarnation");
+    return;
+  }
+  const s = MERCHANT_STOCK.find(x => x.id === id);
+  if (!s || (state.money || 0) < s.cost) return;
+
+  let owned = false;
+  if (s.type === "companion") owned = !!getWife(s.refId).unlocked;
+  else if (s.type === "tame") owned = !!getPetProgress(s.refId).unlocked;
+  else if (s.type === "mount") owned = !!(state.mounts && state.mounts[s.refId] && state.mounts[s.refId].owned);
+  if (owned) {
+    if (typeof toast === "function") toast("Already owned");
+    return;
+  }
+
+  state.money -= s.cost;
+  if (s.type === "companion") setCompanionUnlocked(s.refId, true);
+  else if (s.type === "tame") unlockTameFromMerchant(s.refId);
+  else if (s.type === "mount") {
+    if (!state.mounts) state.mounts = {};
+    state.mounts[s.refId] = { owned: true };
+  }
+  if (typeof toast === "function") toast("Acquired " + s.name);
+  renderStore();
+  if (typeof renderMounts === "function") renderMounts();
+  if (typeof render === "function") render();
+  void save();
+}
+
+/* ---------- HOUSES (state-backed) ---------- */
+function buyHouse(id) {
+  if (typeof HOUSES === "undefined") return;
+  const h = HOUSES.find(x => x.id === id) || HOUSES[id];
+  if (!h) return;
+  const st = ensureHouseState(h.id);
+  if (st.owned || (state.money || 0) < h.cost) return;
+  state.money -= h.cost;
+  st.owned = true;
+  markEconomyDirty();
+  emitGameEvent("house:changed", { id: h.id });
+  if (typeof toast === "function") toast("Purchased " + h.name);
+  renderStore();
+  renderHouses();
+  if (typeof render === "function") render();
+  void save();
+}
+
+function activateHouse(id) {
+  if (typeof HOUSES === "undefined") return;
+  const h = HOUSES.find(x => x.id === id) || HOUSES[id];
+  if (!h || !isHouseOwned(h.id)) return;
+  state.activeHouse = h.id;
+  markEconomyDirty();
+  emitGameEvent("house:changed", { id: h.id });
+  if (typeof toast === "function") toast(h.name + " is now active");
+  renderStore();
+  renderHouses();
+  if (typeof render === "function") render();
+  void save();
+}
+
+function renderHouses() {
+  const list = document.getElementById("housesList");
+  if (!list || typeof HOUSES === "undefined") return;
+  let html = '<div class="section">Your Residences</div>';
+  HOUSES.forEach(h => {
+    const owned = isHouseOwned(h.id);
+    const active = state.activeHouse === h.id;
+    html += '<div class="card ' + (active ? "equipped" : "") + '">';
+    if (h.imgExterior) {
+      html += '<img class="house-img" src="' + h.imgExterior + '" alt="' + h.name + '" loading="lazy" onerror="this.style.display=\'none\'"/>';
+    }
+    html += "<strong>" + h.name + '</strong> <span class="small">Rank ' + (h.rank || "?") + "</span>";
+    html += '<div class="small">' + (h.desc || "") + "</div>";
+    if (owned) {
+      html += active
+        ? '<button type="button" class="btn" disabled>Active</button>'
+        : '<button type="button" class="btn" onclick="activateHouse(' + h.id + ')">Activate</button>';
+    } else {
+      html += '<button type="button" class="btn" onclick="buyHouse(' + h.id + ')" ' +
+        ((state.money || 0) < h.cost ? "disabled" : "") + ">Buy " + h.cost.toLocaleString() + "</button>";
+    }
+    html += "</div>";
+  });
+  list.innerHTML = html;
+}
+
+function renderStore() {
+  const list = document.getElementById("storeList");
+  if (!list) return;
+  let html = "";
+
+  html += '<div class="section">Starter Gear</div>';
+  STARTER_CATALOG.forEach(item => {
+    const owned = !!(state.ownedStarters && state.ownedStarters[item.id]);
+    html += '<div class="card"><strong>' + item.name + '</strong><div class="small">' + (item.desc || item.slot) + "</div>";
+    html += owned
+      ? '<button type="button" class="btn" disabled>Owned</button>'
+      : '<button type="button" class="btn" onclick="buyStarter(\'' + item.id + '\')" ' +
+        ((state.money || 0) < item.cost ? "disabled" : "") + ">Buy " + item.cost.toLocaleString() + "</button>";
+    html += "</div>";
+  });
+
+  if (typeof HOUSES !== "undefined") {
+    html += '<div class="section">Residences</div>';
+    HOUSES.forEach(h => {
+      const owned = isHouseOwned(h.id);
+      const active = state.activeHouse === h.id;
+      html += '<div class="card"><strong>' + h.name + '</strong><div class="small">' + (h.desc || "") + "</div>";
+      if (owned) {
+        html += active
+          ? '<button type="button" class="btn" disabled>Active</button>'
+          : '<button type="button" class="btn secondary" onclick="activateHouse(' + h.id + ')">Activate</button>';
+      } else {
+        html += '<button type="button" class="btn" onclick="buyHouse(' + h.id + ')" ' +
+          ((state.money || 0) < h.cost ? "disabled" : "") + ">Buy " + h.cost.toLocaleString() + "</button>";
+      }
+      html += "</div>";
+    });
+  }
+
+  html += '<div class="section">Upgrades & Items</div>';
+  STORE_CATALOG.forEach(item => {
+    const level = state.upgrades?.[item.key] || 0;
+    const cost = getStoreCost(item, level);
+    const maxed = item.max && level >= item.max;
+    html += '<div class="card"><strong>' + item.name +
+      (item.type !== "consumable" ? " (Lv " + level + ")" : "") +
+      '</strong><div class="small">' + item.desc + "</div>";
+    html += '<button type="button" class="btn" onclick="buyStoreItem(\'' + item.id + '\')" ' +
+      (maxed || (state.money || 0) < cost ? "disabled" : "") + ">" +
+      (maxed ? "MAX" : "Buy " + cost.toLocaleString()) + "</button></div>";
+  });
+
+  if ((state.prestige || 0) >= 1) {
+    html += '<div class="section">Slave Merchant</div>';
+    MERCHANT_STOCK.forEach(s => {
+      let owned = false;
+      if (s.type === "companion") owned = !!getWife(s.refId).unlocked;
+      else if (s.type === "tame") owned = !!getPetProgress(s.refId).unlocked;
+      else if (s.type === "mount") owned = !!(state.mounts && state.mounts[s.refId] && state.mounts[s.refId].owned);
+      html += '<div class="card"><strong>' + s.name + '</strong><div class="small">' + (s.desc || s.type) + "</div>";
+      html += owned
+        ? '<button type="button" class="btn" disabled>Owned</button>'
+        : '<button type="button" class="btn" onclick="buySlave(\'' + s.id + '\')" ' +
+          ((state.money || 0) < s.cost ? "disabled" : "") + ">Buy " + s.cost.toLocaleString() + "</button>";
+      html += "</div>";
+    });
+  } else {
+    html += '<div class="section">Slave Merchant</div><div class="card locked"><strong>Hooded Merchant</strong>' +
+      '<div class="small">Appears after first reincarnation…</div></div>';
+  }
+
+  list.innerHTML = html;
+}
+
+/* ---------- BUSINESS + GUILD ---------- */
+function ensureBusinessState(id) {
+  if (!state.businesses) state.businesses = {};
+  if (!state.businesses[id]) state.businesses[id] = { owned: false, level: 0 };
+  return state.businesses[id];
+}
+
+function buyBusiness(id) {
+  if (typeof BUSINESSES === "undefined") return;
+  const b = BUSINESSES.find(x => x.id === id);
+  if (!b) return;
+  const st = ensureBusinessState(id);
+  if (st.owned || (state.money || 0) < b.cost) return;
+  state.money -= b.cost;
+  st.owned = true;
+  st.level = 0;
+  if (b.isGuild) state.guild.level = Math.max(state.guild.level || 0, 1);
+  markEconomyDirty();
+  emitGameEvent("business:bought", { id });
+  addChallengeProgress("upgrades", 1);
+  if (typeof onTutorialAction === "function") onTutorialAction("buyBusiness");
+  if (typeof toast === "function") toast("Purchased " + b.name);
+  renderBusiness();
+  if (typeof render === "function") render();
+  void save();
+}
+
+function upgradeBusiness(id) {
+  if (typeof BUSINESSES === "undefined") return;
+  const b = BUSINESSES.find(x => x.id === id);
+  const st = ensureBusinessState(id);
+  if (!b || !st.owned || b.isGuild) return;
+  const max = b.maxLevel || 20;
+  if ((st.level || 0) >= max) return;
+  const cost = Math.floor(b.cost * 0.4 * Math.pow(1.35, st.level || 0));
+  if ((state.money || 0) < cost) return;
+  state.money -= cost;
+  st.level = (st.level || 0) + 1;
+  if (b.isGuild) state.guild.level = Math.max(state.guild.level || 0, st.level + 1);
+  markEconomyDirty();
+  emitGameEvent("business:upgraded", { id });
+  if (typeof toast === "function") toast(b.name + " → Lv " + st.level);
+  renderBusiness();
+  if (typeof render === "function") render();
+  void save();
+}
+
+function startGuildJob(jobId) {
+  if (typeof GUILD_JOBS === "undefined") return;
+  const job = GUILD_JOBS.find(j => j.id === jobId);
+  if (!job) return;
+  const guildLv = state.guild?.level || 0;
+  if (guildLv < (job.minGuild || 1)) {
+    if (typeof toast === "function") toast("Guild level too low");
+    return;
+  }
+  if (state.guild.activeJobs && state.guild.activeJobs[jobId]) {
+    if (typeof toast === "function") toast("Job already running");
+    return;
+  }
+  if ((state.money || 0) < job.cost) return;
+  state.money -= job.cost;
+  if (!state.guild.activeJobs) state.guild.activeJobs = {};
+  state.guild.activeJobs[jobId] = {
+    start: Date.now(),
+    duration: (job.duration || 60) * 1000
+  };
+  if (typeof toast === "function") toast("Started: " + job.name);
+  renderBusiness();
+  void save();
+}
+
+function updateGuildJobs() {
+  if (!state.guild || !state.guild.activeJobs) return;
+  const now = Date.now();
+  let changed = false;
+  Object.keys(state.guild.activeJobs).forEach(jobId => {
+    const run = state.guild.activeJobs[jobId];
+    if (!run) return;
+    if (now - run.start < run.duration) return;
+    const job = typeof GUILD_JOBS !== "undefined" ? GUILD_JOBS.find(j => j.id === jobId) : null;
+    delete state.guild.activeJobs[jobId];
+    changed = true;
+    if (!job) return;
+    const success = Math.random() < (job.successChance || 0.8);
+    if (!success) {
+      if (typeof toast === "function") toast(job.name + " failed");
+      return;
+    }
+    const loot = {};
+    const resMult = getPrestigeResourceMult();
+    Object.entries(job.rewards || {}).forEach(([mat, range]) => {
+      const lo = range[0], hi = range[1];
+      let amt = Math.floor(lo + Math.random() * (hi - lo + 1));
+      amt = Math.max(0, Math.floor(amt * resMult));
+      if (amt > 0) loot[mat] = amt;
+    });
+    applyLoot(loot);
+    if (typeof toast === "function") toast(job.name + " success: " + formatLoot(loot));
+  });
+  if (changed) {
+    renderBusiness();
+    if (typeof renderInventory === "function") renderInventory();
+  }
+}
+
+function renderBusiness() {
+  const list = document.getElementById("businessList");
+  if (!list || typeof BUSINESSES === "undefined") return;
+  let html = '<div class="section">Businesses</div>';
+  BUSINESSES.forEach(b => {
+    const st = ensureBusinessState(b.id);
+    const owned = st.owned;
+    const income = getBusinessIncome(b.id);
+    html += '<div class="card"><strong>' + b.name + '</strong>';
+    if (b.isGuild) html += ' <span class="tag">GUILD</span>';
+    html += '<div class="small">' + (b.desc || ("Base " + b.baseIncome + "/s")) + "</div>";
+    if (!owned) {
+      html += '<button type="button" class="btn" onclick="buyBusiness(' + b.id + ')" ' +
+        ((state.money || 0) < b.cost ? "disabled" : "") + ">Buy " + b.cost.toLocaleString() + "</button>";
+    } else if (b.isGuild) {
+      html += '<div class="small">Guild level: ' + (state.guild.level || 0) + "</div>";
+      if (typeof GUILD_JOBS !== "undefined") {
+        GUILD_JOBS.forEach(job => {
+          const running = state.guild.activeJobs && state.guild.activeJobs[job.id];
+          const left = running ? Math.max(0, Math.ceil((running.duration - (Date.now() - running.start)) / 1000)) : 0;
+          html += '<div style="margin-top:6px"><strong class="small">' + job.name + "</strong> " +
+            '<span class="small">(' + job.duration + "s · " + Math.floor(job.successChance * 100) + "%)</span><br/>";
+          if (running) {
+            html += '<span class="small">Running… ' + left + "s</span>";
+          } else {
+            html += '<button type="button" class="btn secondary" onclick="startGuildJob(\'' + job.id + '\')" ' +
+              ((state.guild.level || 0) < job.minGuild || (state.money || 0) < job.cost ? "disabled" : "") +
+              ">Start " + job.cost.toLocaleString() + "</button>";
+          }
+          html += "</div>";
+        });
+      }
+    } else {
+      html += '<div class="small">Lv ' + (st.level || 0) + " · +" + income.toFixed(1) + "/s</div>";
+      const upCost = Math.floor(b.cost * 0.4 * Math.pow(1.35, st.level || 0));
+      html += '<button type="button" class="btn" onclick="upgradeBusiness(' + b.id + ')" ' +
+        ((st.level || 0) >= (b.maxLevel || 20) || (state.money || 0) < upCost ? "disabled" : "") +
+        ">Upgrade " + upCost.toLocaleString() + "</button>";
+    }
+    html += "</div>";
+  });
+  list.innerHTML = html;
+}
+
+/* ---------- MOUNTS ---------- */
+function ensureMountState(id) {
+  if (!state.mounts) state.mounts = {};
+  if (!state.mounts[id]) state.mounts[id] = { owned: false };
+  return state.mounts[id];
+}
+
+function canUnlockMount(m) {
+  if (!m) return false;
+  const u = m.unlock || {};
+  if (u.merchant || m.merchant) return false;
+  if (u.story && (state.storyProgress || 0) >= 1) return true;
+  if (u.money != null && (state.money || 0) >= u.money) return true;
+  if (u.prestige != null && (state.prestige || 0) >= u.prestige) return true;
+  return false;
+}
+
+function buyMount(id) {
+  if (typeof MOUNTS === "undefined") return;
+  const m = MOUNTS.find(x => x.id === id);
+  if (!m) return;
+  if (m.merchant || (m.unlock && m.unlock.merchant)) {
+    if (typeof toast === "function") toast("Merchant exclusive");
+    return;
+  }
+  const st = ensureMountState(id);
+  if (st.owned) return;
+  if (!canUnlockMount(m) && (state.money || 0) < m.cost) {
+    if (typeof toast === "function") toast("Requirements not met");
+    return;
+  }
+  if ((state.money || 0) < m.cost) return;
+  state.money -= m.cost;
+  st.owned = true;
+  if (typeof toast === "function") toast("Acquired " + m.name);
+  renderMounts();
+  if (typeof render === "function") render();
+  void save();
+}
+
+function equipMount(id) {
+  const st = ensureMountState(id);
+  if (!st.owned) return;
+  state.activeMount = state.activeMount === id ? null : id;
+  if (typeof toast === "function") toast(state.activeMount ? "Mounted" : "Dismounted");
+  renderMounts();
+  void save();
+}
+
+function renderMounts() {
+  const list = document.getElementById("mountsList");
+  if (!list || typeof MOUNTS === "undefined") return;
+  let html = '<div class="card small">Mounts are cosmetic. Merchant mounts via Slave Merchant after prestige.</div>';
+  MOUNTS.forEach(m => {
+    const st = ensureMountState(m.id);
+    const merchantOnly = !!(m.merchant || (m.unlock && m.unlock.merchant));
+    const active = state.activeMount === m.id;
+    html += '<div class="card ' + (active ? "equipped" : "") + '">';
+    if (m.img) {
+      html += '<img class="house-img" src="' + m.img + '" alt="' + m.name + '" loading="lazy" onerror="this.style.display=\'none\'"/>';
+    }
+    html += "<strong>" + m.name + '</strong> <span class="small">Rank ' + m.rank + "</span>";
+    html += '<div class="small">' + (m.desc || "") + "</div>";
+    if (st.owned) {
+      html += '<button type="button" class="btn" onclick="equipMount(\'' + m.id + '\')">' +
+        (active ? "Unequip" : "Equip") + "</button>";
+    } else if (merchantOnly) {
+      html += '<button type="button" class="btn" disabled>Merchant only</button>';
+    } else {
+      html += '<button type="button" class="btn" onclick="buyMount(\'' + m.id + '\')" ' +
+        ((state.money || 0) < m.cost ? "disabled" : "") + ">Buy " + m.cost.toLocaleString() + "</button>";
+    }
+    html += "</div>";
+  });
+  list.innerHTML = html;
+}
+
+window.buyStarter = buyStarter;
+window.buyStoreItem = buyStoreItem;
+window.buySlave = buySlave;
+window.buyHouse = buyHouse;
+window.activateHouse = activateHouse;
+window.renderStore = renderStore;
+window.renderHouses = renderHouses;
+window.getStoreCost = getStoreCost;
+window.buyBusiness = buyBusiness;
+window.upgradeBusiness = upgradeBusiness;
+window.startGuildJob = startGuildJob;
+window.updateGuildJobs = updateGuildJobs;
+window.renderBusiness = renderBusiness;
+window.buyMount = buyMount;
+window.equipMount = equipMount;
+window.renderMounts = renderMounts;
+
+console.log("Module 04 store + business + mounts ready");
+/* === END MODULE 04 — PASTE MODULE 05 IMMEDIATELY BELOW === */
+/* ========== MODULE 05 — ARMOUR + CRAFT + INVENTORY UI + DUNGEON ========== */
+/* PASTE ORDER: after 04, before 06. Do not close the script tag. */
+
+/* ---------- ARMOUR (core sets; full table can expand later) ---------- */
+const ARMOUR_TABLE = Object.assign({}, typeof ARMOUR_RECIPES === "object" ? ARMOUR_RECIPES : {}, {
+  starter_helmet: { id: "starter_helmet", name: "Worn Leather Hood", slot: "head", set: "leather", power: 8, defence: 8, isStarter: true, img: ARMOUR_IMG + "Leather%20set/Worn%20leather%20hood.png" },
+  starter_gloves: { id: "starter_gloves", name: "Worn Leather Gloves", slot: "hands", set: "leather", power: 6, defence: 6, isStarter: true, img: ARMOUR_IMG + "Leather%20set/Worn%20leather%20gloves.png" },
+  starter_boots: { id: "starter_boots", name: "Traveller Boots", slot: "feet", set: "leather", power: 7, defence: 7, isStarter: true, img: ARMOUR_IMG + "Leather%20set/Traveller%20boots.png" },
+  starter_chest: { id: "starter_chest", name: "Worn Leather Chest", slot: "body", set: "leather", power: 15, defence: 15, isStarter: true, img: ARMOUR_IMG + "Leather%20set/Worn%20leather%20chest.png" },
+  iron_helmet: { id: "iron_helmet", name: "Iron Helmet", slot: "head", set: "iron", power: 28, defence: 28, materials: { iron_ore: 18, leather: 8 }, upgradeMats: { iron_ore: 8, shadow_essence: 1 }, img: ARMOUR_IMG + "Iron%20set/Iron%20helmet.png" },
+  iron_gloves: { id: "iron_gloves", name: "Iron Gauntlets", slot: "hands", set: "iron", power: 22, defence: 22, materials: { iron_ore: 14, leather: 6 }, upgradeMats: { iron_ore: 6, shadow_essence: 1 }, img: ARMOUR_IMG + "Iron%20set/Iron%20gauntlets.png" },
+  iron_boots: { id: "iron_boots", name: "Iron Greaves", slot: "feet", set: "iron", power: 24, defence: 24, materials: { iron_ore: 16, leather: 6 }, upgradeMats: { iron_ore: 7, shadow_essence: 1 }, img: ARMOUR_IMG + "Iron%20set/Iron%20greaves.png" },
+  iron_chest: { id: "iron_chest", name: "Iron Chestplate", slot: "body", set: "iron", power: 45, defence: 45, materials: { iron_ore: 28, leather: 12 }, upgradeMats: { iron_ore: 12, dark_leather: 4 }, img: ARMOUR_IMG + "Iron%20set/Iron%20chest%20plate.png" },
+  steel_helmet: { id: "steel_helmet", name: "Steel Helmet", slot: "head", set: "steel", power: 48, defence: 48, materials: { steel_ingot: 14, iron_ore: 10 }, upgradeMats: { steel_ingot: 8, shadow_essence: 2 }, img: ARMOUR_IMG + "Steel%20set/Steel%20helmet.png" },
+  steel_gloves: { id: "steel_gloves", name: "Steel Gauntlets", slot: "hands", set: "steel", power: 38, defence: 38, materials: { steel_ingot: 10, iron_ore: 8 }, upgradeMats: { steel_ingot: 6, shadow_essence: 1 }, img: ARMOUR_IMG + "Steel%20set/Steel%20gauntlets.png" },
+  steel_boots: { id: "steel_boots", name: "Steel Greaves", slot: "feet", set: "steel", power: 40, defence: 40, materials: { steel_ingot: 12, iron_ore: 8 }, upgradeMats: { steel_ingot: 7, shadow_essence: 1 }, img: ARMOUR_IMG + "Steel%20set/Steel%20greaves.png" },
+  steel_chest: { id: "steel_chest", name: "Steel Chest Plate", slot: "body", set: "steel", power: 72, defence: 72, materials: { steel_ingot: 22, iron_ore: 14 }, upgradeMats: { steel_ingot: 12, shadow_essence: 3 }, img: ARMOUR_IMG + "Steel%20set/Steel%20chest%20plate.png" },
+  mithril_helmet: { id: "mithril_helmet", name: "Mithril Helmet", slot: "head", set: "mithril", power: 78, defence: 78, materials: { mithril_ore: 12, steel_ingot: 8 }, upgradeMats: { mithril_ore: 6, ice_crystal: 2 }, img: ARMOUR_IMG + "Mithril%20set/Mithril%20helmet.png" },
+  mithril_gloves: { id: "mithril_gloves", name: "Mithril Gauntlets", slot: "hands", set: "mithril", power: 62, defence: 62, materials: { mithril_ore: 9, steel_ingot: 6 }, upgradeMats: { mithril_ore: 5, ice_crystal: 1 }, img: ARMOUR_IMG + "Mithril%20set/Mithril%20gauntlets.png" },
+  mithril_boots: { id: "mithril_boots", name: "Mithril Greaves", slot: "feet", set: "mithril", power: 66, defence: 66, materials: { mithril_ore: 10, steel_ingot: 6 }, upgradeMats: { mithril_ore: 5, ice_crystal: 2 }, img: ARMOUR_IMG + "Mithril%20set/Mithril%20greaves.png" },
+  mithril_chest: { id: "mithril_chest", name: "Mithril Chest Plate", slot: "body", set: "mithril", power: 110, defence: 110, materials: { mithril_ore: 18, steel_ingot: 12 }, upgradeMats: { mithril_ore: 10, ice_crystal: 3 }, img: ARMOUR_IMG + "Mithril%20set/Mithril%20chest%20plate.png" }
+});
+window.ARMOUR_RECIPES = ARMOUR_TABLE;
+
+const ARMOUR_SET_BONUSES = {
+  leather: { name: "Leather Set", pieces: 4, bonusPower: 10, bonusDefence: 10 },
+  iron: { name: "Iron Set", pieces: 4, bonusPower: 25, bonusDefence: 25 },
+  steel: { name: "Steel Set", pieces: 4, bonusPower: 45, bonusDefence: 45 },
+  mithril: { name: "Mithril Set", pieces: 4, bonusPower: 70, bonusDefence: 70 }
+};
+const ARMOUR_SLOTS = ["head", "body", "hands", "feet"];
+
+function ensureArmourState() {
+  if (!state.armour) state.armour = {};
+  if (!state.armourLevels) state.armourLevels = {};
+  if (!state.gear) state.gear = {};
+}
+function getArmourRecipe(id) { return ARMOUR_TABLE[id] || null; }
+function getArmourLevel(id) { return (state.armourLevels && state.armourLevels[id]) || 0; }
+function pieceScaledStat(recipe, level, key) {
+  const base = recipe[key] != null ? recipe[key] : (recipe.power || 0);
+  return Math.floor(base * (1 + level * 0.15));
+}
+function getEquippedSetId() {
+  ensureArmourState();
+  const ids = ARMOUR_SLOTS.map(s => state.armour[s]).filter(Boolean);
+  if (ids.length < 4) return null;
+  const sets = ids.map(id => getArmourRecipe(id)?.set).filter(Boolean);
+  if (sets.length < 4) return null;
+  return sets.every(s => s === sets[0]) ? sets[0] : null;
+}
+function getArmourPower() {
+  ensureArmourState();
+  let total = 0;
+  for (const slot of ARMOUR_SLOTS) {
+    const id = state.armour[slot];
+    if (!id) continue;
+    const recipe = getArmourRecipe(id);
+    if (recipe) total += pieceScaledStat(recipe, getArmourLevel(id), "power");
+  }
+  const setId = getEquippedSetId();
+  if (setId && ARMOUR_SET_BONUSES[setId]) total += ARMOUR_SET_BONUSES[setId].bonusPower || 0;
+  return Math.floor(total);
+}
+function getDefenceRating() {
+  ensureArmourState();
+  let total = 0;
+  for (const slot of ARMOUR_SLOTS) {
+    const id = state.armour[slot];
+    if (!id) continue;
+    const recipe = getArmourRecipe(id);
+    if (recipe) total += pieceScaledStat(recipe, getArmourLevel(id), "defence");
+  }
+  const setId = getEquippedSetId();
+  if (setId && ARMOUR_SET_BONUSES[setId]) total += ARMOUR_SET_BONUSES[setId].bonusDefence || 0;
+  return Math.floor(total);
+}
+function craftArmour(id) {
+  ensureArmourState();
+  const recipe = getArmourRecipe(id);
+  if (!recipe || recipe.isStarter || state.gear[id]) return false;
+  if (!recipe.materials || !hasMaterials(recipe.materials)) {
+    if (typeof toast === "function") toast("Missing materials");
+    return false;
+  }
+  consumeMaterials(recipe.materials);
+  state.gear[id] = true;
+  state.armourLevels[id] = 0;
+  state.armour[recipe.slot] = id;
+  addChallengeProgress("craft", 1);
+  markEconomyDirty();
+  if (typeof toast === "function") toast("Crafted " + recipe.name);
+  void save();
+  if (typeof renderCraft === "function") renderCraft();
+  if (typeof render === "function") render();
+  return true;
+}
+function upgradeArmour(id) {
+  ensureArmourState();
+  const recipe = getArmourRecipe(id);
+  if (!recipe || !state.gear[id] || !recipe.upgradeMats) return false;
+  if (!hasMaterials(recipe.upgradeMats)) {
+    if (typeof toast === "function") toast("Missing upgrade materials");
+    return false;
+  }
+  consumeMaterials(recipe.upgradeMats);
+  state.armourLevels[id] = getArmourLevel(id) + 1;
+  markEconomyDirty();
+  emitGameEvent("armour:upgraded", { id });
+  if (typeof toast === "function") toast(recipe.name + " → Lv " + state.armourLevels[id]);
+  void save();
+  if (typeof renderCraft === "function") renderCraft();
+  if (typeof render === "function") render();
+  return true;
+}
+function equipArmour(id) {
+  ensureArmourState();
+  const recipe = getArmourRecipe(id);
+  if (!recipe || !state.gear[id]) return false;
+  state.armour[recipe.slot] = id;
+  markEconomyDirty();
+  void save();
+  if (typeof renderCraft === "function") renderCraft();
+  if (typeof render === "function") render();
+  return true;
+}
+function unequipArmour(slot) {
+  ensureArmourState();
+  if (state.armour[slot]) {
+    delete state.armour[slot];
+    markEconomyDirty();
+    void save();
+    if (typeof renderCraft === "function") renderCraft();
+    if (typeof render === "function") render();
+  }
+}
+function resetArmourKeepStarter() {
+  ensureArmourState();
+  const keepGear = {}, keepLevels = {}, keepEquipped = {};
+  Object.keys(state.gear || {}).forEach(id => {
+    const r = getArmourRecipe(id);
+    if (r?.isStarter) { keepGear[id] = true; keepLevels[id] = 0; }
+  });
+  ARMOUR_SLOTS.forEach(slot => {
+    const id = state.armour[slot];
+    if (id && getArmourRecipe(id)?.isStarter) keepEquipped[slot] = id;
+  });
+  state.gear = keepGear;
+  state.armourLevels = keepLevels;
+  state.armour = keepEquipped;
+  markEconomyDirty();
+}
+function onStarterArmourPurchased(itemId) {
+  const recipe = getArmourRecipe(itemId);
+  if (!recipe || !recipe.isStarter) return;
+  ensureArmourState();
+  state.gear[itemId] = true;
+  state.armourLevels[itemId] = 0;
+  state.armour[recipe.slot] = itemId;
+  markEconomyDirty();
+}
+
+window.getArmourPower = getArmourPower;
+window.getDefenceRating = getDefenceRating;
+window.craftArmour = craftArmour;
+window.upgradeArmour = upgradeArmour;
+window.equipArmour = equipArmour;
+window.unequipArmour = unequipArmour;
+window.resetArmourKeepStarter = resetArmourKeepStarter;
+window.onStarterArmourPurchased = onStarterArmourPurchased;
+window.getArmourRecipe = getArmourRecipe;
+
+/* ---------- CRAFT (materials + armour) ---------- */
+function craftRecipe(recipeId) {
+  if (typeof CRAFTING_RECIPES === "undefined") return;
+  const r = CRAFTING_RECIPES.find(x => x.id === recipeId);
+  if (!r) return;
+  if (!hasMaterials(r.materials)) {
+    if (typeof toast === "function") toast("Missing materials");
+    return;
+  }
+  consumeMaterials(r.materials);
+  applyLoot(r.result);
+  addChallengeProgress("craft", 1);
+  if (typeof toast === "function") toast("Crafted " + r.name);
+  void save();
+  renderCraft();
+  renderInventory();
+  if (typeof render === "function") render();
+}
+
+function renderCraft() {
+  const list = document.getElementById("craftList");
+  if (!list) return;
+  let html = '<div class="section">Materials</div>';
+  if (typeof CRAFTING_RECIPES !== "undefined") {
+    CRAFTING_RECIPES.forEach(r => {
+      const mats = Object.entries(r.materials).map(([id, n]) => n + "× " + getMaterialMeta(id).name).join(", ");
+      html += '<div class="card"><strong>' + r.name + '</strong><div class="small">' + mats + "</div>" +
+        '<button type="button" class="btn" onclick="craftRecipe(\'' + r.id + '\')" ' +
+        (hasMaterials(r.materials) ? "" : "disabled") + ">Craft</button></div>";
+    });
+  }
+  html += '<div class="section">Armour</div>';
+  html += '<div class="small">DEF ' + getDefenceRating() + " · Armour Power " + getArmourPower() + "</div>";
+  Object.values(ARMOUR_TABLE).forEach(recipe => {
+    const owned = !!state.gear?.[recipe.id];
+    const equipped = state.armour?.[recipe.slot] === recipe.id;
+    const level = getArmourLevel(recipe.id);
+    html += '<div class="card">';
+    if (recipe.img) html += '<img src="' + recipe.img + '" alt="" style="width:48px;height:48px;object-fit:contain" onerror="this.style.display=\'none\'"/>';
+    html += "<strong>" + recipe.name + "</strong><div class=\"small\">" + recipe.slot + " · Lv " + level + "</div>";
+    if (recipe.isStarter && !owned) html += '<div class="small">Buy from Store</div>';
+    else if (!owned) html += '<button type="button" class="btn" onclick="craftArmour(\'' + recipe.id + '\')">Craft</button>';
+    else {
+      if (!equipped) html += '<button type="button" class="btn" onclick="equipArmour(\'' + recipe.id + '\')">Equip</button> ';
+      else html += '<span class="tag">Equipped</span> ';
+      html += '<button type="button" class="btn secondary" onclick="upgradeArmour(\'' + recipe.id + '\')">Upgrade</button>';
+    }
+    html += "</div>";
+  });
+  list.innerHTML = html;
+}
+
+window.craftRecipe = craftRecipe;
+window.renderCraft = renderCraft;
+
+/* ---------- INVENTORY RENDER ---------- */
+function renderInventory(container) {
+  if (!container) container = document.getElementById("inventoryList");
+  if (!container) return;
+  const entries = getSortedInventoryEntries();
+  if (!entries.length) {
+    container.innerHTML = '<p class="small" style="text-align:center;padding:20px">Inventory is empty.</p>';
+    return;
+  }
+  container.innerHTML = '<div class="inventory-grid">' + entries.map(([id, amount]) => {
+    const mat = getMaterialMeta(id);
+    const icon = mat.icon
+      ? '<img src="' + mat.icon + '" alt="" class="inv-icon" onerror="this.style.display=\'none\'"/>'
+      : "";
+    return '<div class="inv-item rarity-' + mat.rarity + '">' + icon +
+      '<span class="amount">' + amount + "</span>" +
+      '<span class="name">' + mat.name + "</span>" +
+      '<span class="rarity-label">' + mat.rarity + "</span></div>";
+  }).join("") + "</div>";
+}
+window.renderInventory = renderInventory;
+
+/* ---------- DUNGEON ---------- */
+const DUNGEON_LIST = typeof DUNGEONS !== "undefined" ? DUNGEONS : [];
+const DIFF_MODS = typeof DIFFICULTY_MODIFIERS !== "undefined" ? DIFFICULTY_MODIFIERS : {
+  easy: { powerMult: 0.75, rewardMult: 0.7, name: "Easy" },
+  normal: { powerMult: 1, rewardMult: 1, name: "Normal" },
+  hard: { powerMult: 1.45, rewardMult: 1.4, name: "Hard" },
+  nightmare: { powerMult: 2.1, rewardMult: 2, name: "Nightmare" }
+};
+const DUNGEON_TIERS = [
+  { name: "Easy", powerMult: 1, rewardMult: 1 },
+  { name: "Medium", powerMult: 1.55, rewardMult: 1.35 },
+  { name: "Hard", powerMult: 2.25, rewardMult: 1.8 },
+  { name: "Extreme", powerMult: 3.4, rewardMult: 2.5 }
+];
+const CAVE_DIVING = [
+  { id: "shallow", name: "Shallow Caves", powerNeeded: 50, stamina: 4, rewards: { wood: [5, 12], iron_ore: [1, 3], stone: [4, 9] } },
+  { id: "deep", name: "Deep Caverns", powerNeeded: 180, stamina: 9, rewards: { iron_ore: [3, 7], crystal: [1, 3], steel_ingot: [0, 1] } },
+  { id: "abyss", name: "Abyssal Depths", powerNeeded: 480, stamina: 15, rewards: { dark_ore: [2, 5], void_crystal: [0, 1], shadow_essence: [1, 2] } }
+];
+const MONSTER_HUNTS = [
+  { id: "goblin", name: "Goblin Pack", powerNeeded: 60, stamina: 5, loot: ["leather", "small_fang"] },
+  { id: "wolf", name: "Dire Wolves", powerNeeded: 150, stamina: 8, loot: ["wolf_pelt", "fang"] },
+  { id: "ogre", name: "Ogre Raiders", powerNeeded: 340, stamina: 12, loot: ["ogre_hide", "thick_bone"] }
+];
+
+function ensureDungeonState() {
+  if (!state.dungeonProgress) state.dungeonProgress = {};
+  if (!state.dungeonTier) state.dungeonTier = {};
+  if (!state.clearedDungeons) state.clearedDungeons = [];
+  if (!state.battleLog) state.battleLog = [];
+  if (!state.dungeonDifficulty) state.dungeonDifficulty = "normal";
+}
+function getDungeonById(id) { return DUNGEON_LIST.find(d => d.id === id); }
+function getDiffMod() { return DIFF_MODS[state.dungeonDifficulty || "normal"] || DIFF_MODS.normal; }
+function getDungeonTier(id) { return Math.min(3, state.dungeonTier?.[id] || 0); }
+function getDungeonTierMod(id) { return DUNGEON_TIERS[getDungeonTier(id)]; }
+
+function rollDungeonLoot(table, floor) {
+  const gained = {};
+  const resMult = getPrestigeResourceMult();
+  (table || []).forEach(entry => {
+    if (Math.random() < entry.chance + floor * 0.012) {
+      let amount = Math.floor(entry.min + Math.random() * (entry.max - entry.min + 1));
+      amount = Math.max(1, Math.floor(amount * resMult));
+      gained[entry.id] = (gained[entry.id] || 0) + amount;
+    }
+  });
+  return gained;
+}
+
+function startDungeon(dungeonId) {
+  ensureDungeonState();
+  const dungeon = getDungeonById(dungeonId);
+  if (!dungeon) return;
+  const chapter = state.storyProgress || 0;
+  const prestiges = state.prestige || 0;
+  if (chapter < dungeon.unlockChapter || prestiges < dungeon.requiresPrestige) {
+    if (typeof toast === "function") toast("Dungeon still locked!");
+    return;
+  }
+  if ((state.stamina || 0) < dungeon.staminaCost) {
+    if (typeof toast === "function") toast("Not enough stamina");
+    return;
+  }
+  let currentFloor = (state.dungeonProgress[dungeonId] || 0) + 1;
+  if (currentFloor > dungeon.floors) currentFloor = 1;
+  state.stamina -= dungeon.staminaCost;
+  const globalDiff = getDiffMod();
+  const tierMod = getDungeonTierMod(dungeonId);
+  const floorScale = 1 + (currentFloor - 1) * 0.28;
+  const required = Math.floor(dungeon.basePower * floorScale * globalDiff.powerMult * tierMod.powerMult);
+  const playerPower = getPlayerPower();
+  const victory = Math.random() < Math.min(0.92, playerPower / Math.max(1, required));
+
+  if (victory) {
+    state.dungeonProgress[dungeonId] = currentFloor;
+    const loot = rollDungeonLoot(dungeon.lootTable || [], currentFloor);
+    applyLoot(loot);
+    const gold = Math.floor((200 * dungeon.basePower / 40 * currentFloor + Math.random() * 280) * globalDiff.rewardMult * tierMod.rewardMult);
+    state.money = (state.money || 0) + gold;
+    state.kibble = (state.kibble || 0) + Math.floor(1.8 * globalDiff.rewardMult * tierMod.rewardMult);
+    (state.activePets || []).forEach(id => { getPetProgress(id).kibble = (getPetProgress(id).kibble || 0) + 10; });
+    if (currentFloor >= dungeon.floors) {
+      if (!state.clearedDungeons.includes(dungeonId)) state.clearedDungeons.push(dungeonId);
+      const oldTier = getDungeonTier(dungeonId);
+      if (oldTier < 3) {
+        state.dungeonTier[dungeonId] = oldTier + 1;
+        if (typeof toast === "function") toast(dungeon.name + " is now " + DUNGEON_TIERS[oldTier + 1].name);
+      }
+      const idx = DUNGEON_LIST.findIndex(d => d.id === dungeonId);
+      if (idx >= 0) state.storyProgress = Math.max(state.storyProgress || 0, idx + 1);
+      addChallengeProgress("dungeonClear", 1);
+      state.dungeonProgress[dungeonId] = 0;
+    }
+    const msg = "Victory!\n" + dungeon.name + " F" + currentFloor + "/" + dungeon.floors + "\n+" + gold + " gold · " + formatLoot(loot);
+    addToBattleLog("Victory " + dungeon.name + " F" + currentFloor);
+    if (typeof showModal === "function") showModal("✦ Victory ✦", msg);
+  } else {
+    state.life = Math.max(10, (state.life || 100) - 12);
+    addToBattleLog("Defeat " + dungeon.name + " F" + currentFloor);
+    if (typeof showModal === "function") {
+      showModal("✦ Defeat ✦", dungeon.name + " Floor " + currentFloor + "\nPower " + playerPower + " vs ~" + required + " · -12 Life");
+    }
+  }
+  markEconomyDirty();
+  renderDungeon();
+  renderInventory();
+  if (typeof render === "function") render();
+  void save();
+}
+
+function setIdleDungeon(id) {
+  ensureDungeonState();
+  const dungeon = getDungeonById(id);
+  if (!dungeon) return;
+  if ((state.storyProgress || 0) < dungeon.unlockChapter || (state.prestige || 0) < dungeon.requiresPrestige) {
+    if (typeof toast === "function") toast("Dungeon locked");
+    return;
+  }
+  state.activeDungeon = { id, startTime: Date.now(), duration: 45000 };
+  if (typeof toast === "function") toast("Idle dungeon: " + dungeon.name);
+  renderDungeon();
+  void save();
+}
+function clearIdleDungeon() {
+  state.activeDungeon = null;
+  renderDungeon();
+  void save();
+}
+function processIdleDungeon() {
+  if (!state.activeDungeon) return;
+  const elapsed = Date.now() - state.activeDungeon.startTime;
+  if (elapsed >= (state.activeDungeon.duration || 45000)) {
+    state.activeDungeon.startTime = Date.now();
+    startDungeon(state.activeDungeon.id);
+  }
+  updateIdleProgressBar();
+}
+function updateIdleProgressBar() {
+  if (!state.activeDungeon) return;
+  const bar = document.getElementById("idleProgressBar");
+  const text = document.getElementById("idleProgressText");
+  const elapsed = Date.now() - state.activeDungeon.startTime;
+  const dur = state.activeDungeon.duration || 45000;
+  const pct = Math.min(100, (elapsed / dur) * 100);
+  if (bar) bar.style.width = pct + "%";
+  if (text) text.textContent = "Next attempt in " + Math.max(0, Math.ceil((dur - elapsed) / 1000)) + "s";
+}
+
+function runCaveDiving(id) {
+  ensureDungeonState();
+  const cave = CAVE_DIVING.find(c => c.id === id);
+  if (!cave) return;
+  if ((state.stamina || 0) < cave.stamina) { if (typeof toast === "function") toast("Not enough stamina"); return; }
+  if (getPlayerPower() < cave.powerNeeded) { if (typeof toast === "function") toast("Need " + cave.powerNeeded + " power"); return; }
+  state.stamina -= cave.stamina;
+  const resMult = getPrestigeResourceMult();
+  const gained = {};
+  Object.entries(cave.rewards).forEach(([mat, range]) => {
+    let amt = Math.floor(range[0] + Math.random() * (range[1] - range[0] + 1));
+    amt = Math.floor(amt * resMult);
+    if (amt > 0) { gained[mat] = amt; state.inventory[mat] = (state.inventory[mat] || 0) + amt; }
+  });
+  if (typeof showModal === "function") showModal("✦ Cave Diving ✦", formatLoot(gained));
+  markEconomyDirty();
+  renderDungeon();
+  renderInventory();
+  if (typeof render === "function") render();
+  void save();
+}
+
+function runMonsterHunt(id) {
+  ensureDungeonState();
+  const hunt = MONSTER_HUNTS.find(h => h.id === id);
+  if (!hunt) return;
+  if ((state.stamina || 0) < hunt.stamina) { if (typeof toast === "function") toast("Not enough stamina"); return; }
+  if (getPlayerPower() < hunt.powerNeeded * 0.9) { if (typeof toast === "function") toast("Too weak"); return; }
+  state.stamina -= hunt.stamina;
+  const gold = Math.floor(70 + Math.random() * 90);
+  state.money = (state.money || 0) + gold;
+  const mat = hunt.loot[Math.floor(Math.random() * hunt.loot.length)];
+  const amt = 1 + Math.floor(Math.random() * 3);
+  state.inventory[mat] = (state.inventory[mat] || 0) + amt;
+  if (typeof showModal === "function") showModal("✦ Monster Hunt ✦", hunt.name + " · +" + gold + "g · " + amt + "× " + mat);
+  markEconomyDirty();
+  renderDungeon();
+  renderInventory();
+  if (typeof render === "function") render();
+  void save();
+}
+
+function setDungeonDifficulty(value) {
+  if (!DIFF_MODS[value]) return;
+  state.dungeonDifficulty = value;
+  renderDungeon();
+  void save();
+}
+
+function renderDungeon() {
+  ensureDungeonState();
+  const list = document.getElementById("dungeonList");
+  if (!list) return;
+  const chapter = state.storyProgress || 0;
+  const prestiges = state.prestige || 0;
+  const diff = state.dungeonDifficulty || "normal";
+  const power = getPlayerPower();
+  let html = '<div style="margin-bottom:12px"><label>Difficulty: </label><select onchange="setDungeonDifficulty(this.value)" style="background:#1a1a30;color:#eee;border:1px solid #444;padding:4px 8px;border-radius:6px">';
+  Object.keys(DIFF_MODS).forEach(d => {
+    html += '<option value="' + d + '"' + (diff === d ? " selected" : "") + ">" + DIFF_MODS[d].name + "</option>";
+  });
+  html += '</select></div><p class="small">Power <b>' + power + "</b> · Stamina <b>" + Math.floor(state.stamina || 0) + "</b></p>";
+  html += '<div class="section">Main Dungeons</div>';
+  DUNGEON_LIST.forEach(d => {
+    const unlocked = chapter >= d.unlockChapter && prestiges >= d.requiresPrestige;
+    const progress = state.dungeonProgress[d.id] || 0;
+    const tierName = DUNGEON_TIERS[getDungeonTier(d.id)].name;
+    const isIdle = state.activeDungeon && state.activeDungeon.id === d.id;
+    html += '<div class="card ' + (!unlocked ? "locked" : "") + '">';
+    if (d.exteriorImg) html += '<img class="house-img" src="' + d.exteriorImg + '" alt="" loading="lazy" onerror="this.style.display=\'none\'"/>';
+    html += "<strong>" + d.name + (unlocked ? "" : " 🔒") + "</strong>";
+    if (!unlocked) {
+      html += '<div class="small">Requires Chapter ' + d.unlockChapter + (d.requiresPrestige ? " + Prestige " + d.requiresPrestige : "") + "</div>";
+    } else {
+      html += '<div class="small">Tier ' + tierName + " · Floors " + progress + "/" + d.floors + " · Stam " + d.staminaCost + "</div>";
+      html += '<button type="button" class="btn" onclick="startDungeon(\'' + d.id + '\')" ' + ((state.stamina || 0) < d.staminaCost ? "disabled" : "") + ">" + (isIdle ? "Idling…" : "Enter") + "</button> ";
+      html += '<button type="button" class="btn secondary" onclick="setIdleDungeon(\'' + d.id + '\')">Idle</button>';
+      if (isIdle) html += ' <button type="button" class="btn secondary" onclick="clearIdleDungeon()">Stop</button>';
+    }
+    html += "</div>";
+  });
+  if (state.activeDungeon) {
+    html += '<div class="card"><strong>Idle Running</strong><div class="bar"><div class="barFill" id="idleProgressBar" style="width:0%"></div></div><div class="small" id="idleProgressText">…</div></div>';
+  }
+  html += '<div class="section">Cave Diving</div>';
+  CAVE_DIVING.forEach(c => {
+    html += '<div class="card"><strong>' + c.name + '</strong><div class="small">Power ' + c.powerNeeded + " · Stam " + c.stamina + "</div>" +
+      '<button type="button" class="btn" onclick="runCaveDiving(\'' + c.id + '\')" ' + ((state.stamina || 0) < c.stamina ? "disabled" : "") + ">Dive</button></div>";
+  });
+  html += '<div class="section">Monster Hunts</div>';
+  MONSTER_HUNTS.forEach(h => {
+    html += '<div class="card"><strong>' + h.name + '</strong><div class="small">Power ' + h.powerNeeded + " · Stam " + h.stamina + "</div>" +
+      '<button type="button" class="btn" onclick="runMonsterHunt(\'' + h.id + '\')" ' + ((state.stamina || 0) < h.stamina ? "disabled" : "") + ">Hunt</button></div>";
+  });
+  list.innerHTML = html;
+
+  const log = document.getElementById("battleLog");
+  if (log) {
+    const entries = state.battleLog || [];
+    log.innerHTML = '<div style="display:flex;justify-content:space-between"><strong>Battle Log</strong>' +
+      '<button type="button" class="btn secondary" style="font-size:11px;padding:3px 8px" onclick="clearBattleLog()">Clear</button></div>' +
+      (entries.length ? entries.slice(0, 20).map(l => '<div class="small">' + l + "</div>").join("") : '<div class="small">No battles yet.</div>');
+  }
+  updateIdleProgressBar();
+}
+
+window.startDungeon = startDungeon;
+window.setIdleDungeon = setIdleDungeon;
+window.clearIdleDungeon = clearIdleDungeon;
+window.processIdleDungeon = processIdleDungeon;
+window.runCaveDiving = runCaveDiving;
+window.runMonsterHunt = runMonsterHunt;
+window.setDungeonDifficulty = setDungeonDifficulty;
+window.renderDungeon = renderDungeon;
+
+console.log("Module 05 armour + craft + dungeon ready");
+/* === END MODULE 05 — PASTE MODULE 06 IMMEDIATELY BELOW === */
+/* ========== MODULE 06 — STORY + PRESTIGE + TUTORIAL + CHALLENGES ========== */
+/* PASTE ORDER: after 05, before 07. Do not close the script tag. */
+
+/* ---------- STORY ---------- */
+const STORY_BASE_SEED = 2026;
+const STORY_BIOMES = [
+  "Grasslands", "Forest", "Ocean", "Desert",
+  "Void", "Under-trove", "Dimensional Gate", "Snowy Mountains"
+];
+const STORY_NODE_REWARDS = {
+  grasslands_2: { type: "wife", id: 13, name: "Mira" },
+  forest_3: { type: "wife", id: 7, name: "Isolde" },
+  desert_2: { type: "wife", id: 8, name: "Kira" },
+  void_1: { type: "wife", id: 10, name: "Luna" },
+  ocean_2: { type: "pet", id: 4, name: "Blaze" },
+  forest_1: { type: "pet", id: 2, name: "Shade" }
+};
+
+function getStorySeed() {
+  return STORY_BASE_SEED + ((state.prestige || 0) * 7919);
+}
+function seededRandom(seed) {
+  let s = seed % 2147483647;
+  if (s <= 0) s += 2147483646;
+  return function () {
+    s = (s * 16807) % 2147483647;
+    return (s - 1) / 2147483646;
+  };
+}
+function generateLore(biome, index, seed) {
+  const rand = seededRandom(seed + index * 97);
+  const templates = {
+    Grasslands: ["Soft winds carry wildflowers across the plains.", "A lone tree watches the path."],
+    Forest: ["Ancient trees whisper older than kingdoms.", "Glowing mushrooms light the roots."],
+    Ocean: ["Salt spray stings as waves crash.", "Something moves beneath the surface."],
+    Desert: ["Heat shimmers over golden dunes.", "Tracks lead toward a distant oasis."],
+    Void: ["Reality frays at the edges.", "Stars hang too close."],
+    "Under-trove": ["An underground forest glows softly.", "Ore veins glitter in the walls."],
+    "Dimensional Gate": ["Reality thins near the archway.", "Other worlds flicker in the gate."],
+    "Snowy Mountains": ["Icy wind howls across the peaks.", "Breath freezes with every step."]
+  };
+  const list = templates[biome] || ["The path continues."];
+  return list[Math.floor(rand() * list.length)];
+}
+
+function generateStoryMap() {
+  const seed = getStorySeed();
+  const rand = seededRandom(seed);
+  const prestige = state.prestige || 0;
+  const nodes = [];
+  let id = 0;
+  STORY_BIOMES.forEach((biome, bi) => {
+    const count = bi < 2 ? 4 : bi < 5 ? 5 : 6;
+    for (let i = 0; i < count; i++) {
+      const group = bi < 2 ? "basic" : bi < 5 ? "medium" : "hard";
+      const key = biome.toLowerCase().replace(/\s+/g, "_") + "_" + i;
+      const powerReq = Math.floor(30 + id * 14 + bi * 20 + rand() * 10);
+      const goldReq = Math.floor(300 + id * 180 + bi * 420 + (group === "hard" ? 800 : 0));
+      const manaReq = Math.floor(4 + id * 1.2 + bi * 2.5);
+      let houseReq = prestige === 0
+        ? Math.min(14, Math.floor(bi * 1.8 + i / 2))
+        : Math.min(18, Math.floor(bi * 2.2 + i));
+      let mountReq = Math.min(10, Math.floor(bi * 1.4 + i / 2));
+      nodes.push({
+        id, key, biome, group, indexInBiome: i,
+        title: biome + " – " + (i + 1),
+        lore: generateLore(biome, id, seed),
+        req: {
+          power: powerReq, money: goldReq, mana: manaReq,
+          houseRank: houseReq, mountRank: mountReq
+        },
+        rewards: {
+          money: Math.floor(goldReq * 1.6),
+          materials: group === "basic"
+            ? { wood: 4 + i, herb: 2 + i }
+            : group === "medium"
+              ? { iron_ore: 2 + i, crystal: 1 }
+              : { mithril_ore: 1 + Math.floor(i / 2), shadow_essence: 1 }
+        },
+        chargeTime: group === "basic" ? 12 : group === "medium" ? 20 : 28,
+        isFinal: bi === STORY_BIOMES.length - 1 && i === count - 1,
+        rewardKey: STORY_NODE_REWARDS[key] ? key : null
+      });
+      id++;
+    }
+  });
+  return nodes;
+}
+
+function ensureStoryState() {
+  if (!state.story || typeof state.story !== "object") {
+    state.story = {
+      current: 0, completed: [], charging: null, map: null,
+      extremeMode: false, lastResourceTick: Date.now(),
+      selectedNode: 0, storyCompleted: false, mana: 12, maxMana: 12
+    };
+  }
+  if (!Array.isArray(state.story.completed)) state.story.completed = [];
+  if (state.story.storyCompleted == null) state.story.storyCompleted = false;
+  if (state.story.mana == null) state.story.mana = 12;
+  if (state.story.maxMana == null) state.story.maxMana = 12;
+  if (!state.story.map || !state.story.map.length) state.story.map = generateStoryMap();
+}
+
+function onPrestigeStory() {
+  state.story = {
+    current: 0, completed: [], charging: null, map: null,
+    extremeMode: true, lastResourceTick: Date.now(),
+    selectedNode: 0, storyCompleted: false,
+    mana: 12, maxMana: Math.min(60, 12 + (state.prestige || 0) * 4)
+  };
+  state.storyProgress = 0;
+  ensureStoryState();
+}
+
+function getHousingRank() {
+  let max = 0;
+  Object.keys(state.houses || {}).forEach(id => {
+    if (state.houses[id] && state.houses[id].owned) {
+      const house = HOUSES.find(x => x.id == id);
+      if (house) max = Math.max(max, house.rank || 0);
+    }
+  });
+  return max;
+}
+function getMaxMountRank() {
+  let max = 0;
+  Object.keys(state.mounts || {}).forEach(id => {
+    if (state.mounts[id] && state.mounts[id].owned) {
+      const m = typeof MOUNTS !== "undefined" ? MOUNTS.find(x => x.id === id) : null;
+      if (m) max = Math.max(max, m.rank || 0);
+    }
+  });
+  return max;
+}
+
+function getNodeRequirementErrors(node) {
+  const errors = [];
+  if (!node) return ["Invalid node"];
+  if (state.story.completed.includes(node.id)) return ["Already completed"];
+  if (node.id > 0 && !state.story.completed.includes(node.id - 1)) errors.push("Complete previous node first");
+  if (typeof isTutorialActive === "function" && isTutorialActive()) errors.push("Finish the tutorial first");
+  const req = node.req || {};
+  const power = getPlayerPower();
+  if (power < (req.power || 0)) errors.push("Power " + power + "/" + req.power);
+  if ((state.money || 0) < (req.money || 0)) errors.push("Gold low");
+  if ((state.story.mana || 0) < (req.mana || 0)) errors.push("Mana " + state.story.mana + "/" + req.mana);
+  if (req.houseRank && getHousingRank() < req.houseRank) errors.push("House Rank " + getHousingRank() + "/" + req.houseRank);
+  if (req.mountRank && getMaxMountRank() < req.mountRank) errors.push("Mount Rank " + getMaxMountRank() + "/" + req.mountRank);
+  return errors;
+}
+
+function startCharging(nodeId) {
+  ensureStoryState();
+  if (typeof isTutorialActive === "function" && isTutorialActive()) {
+    if (typeof toast === "function") toast("The God still has more to teach you...");
+    return;
+  }
+  const node = state.story.map.find(n => n.id === nodeId);
+  if (!node || state.story.completed.includes(nodeId) || state.story.charging) return;
+  const errs = getNodeRequirementErrors(node);
+  if (errs.length) {
+    if (typeof toast === "function") toast(errs[0]);
+    return;
+  }
+  state.story.mana = Math.max(0, (state.story.mana || 0) - (node.req?.mana || 0));
+  state.story.current = nodeId;
+  state.story.selectedNode = nodeId;
+  state.story.charging = { nodeId, progress: 0, startTime: Date.now() };
+  if (typeof toast === "function") toast("Traveling: " + node.title);
+  renderStory();
+  void save();
+}
+
+function applyStoryUnlock(reward) {
+  if (!reward) return;
+  if (reward.type === "wife") {
+    setCompanionUnlocked(reward.id, true);
+    if (typeof showModal === "function") showModal("✦ New Companion ✦", (reward.name || "Companion") + " has joined you!");
+  }
+  if (reward.type === "pet") {
+    if (reward.id === 0 || reward.id === 9) return;
+    unlockTameFromStory(reward.id);
+  }
+}
+
+function completeStoryNode(node) {
+  if (!node || state.story.completed.includes(node.id)) return;
+  state.money = (state.money || 0) + (node.rewards?.money || 0);
+  const resMult = getPrestigeResourceMult();
+  Object.entries(node.rewards?.materials || {}).forEach(([id, amount]) => {
+    state.inventory[id] = (state.inventory[id] || 0) + Math.floor(amount * resMult);
+  });
+  if (node.rewardKey && STORY_NODE_REWARDS[node.rewardKey]) applyStoryUnlock(STORY_NODE_REWARDS[node.rewardKey]);
+  state.story.completed.push(node.id);
+  state.storyProgress = Math.max(state.storyProgress || 0, node.id + 1);
+  addChallengeProgress("nodes", 1);
+  const next = state.story.map.find(n => n.id === node.id + 1);
+  if (next) {
+    state.story.current = next.id;
+    state.story.selectedNode = next.id;
+  }
+  if (node.isFinal) {
+    state.story.storyCompleted = true;
+    if (typeof showModal === "function") showModal("✦ Story Complete ✦", "You may Prestige at Year 25.");
+  } else if (typeof toast === "function") toast("Node complete: " + node.title);
+  markEconomyDirty();
+  void save();
+}
+
+function storyTick() {
+  ensureStoryState();
+  if (!state.story.charging) return;
+  const node = state.story.map.find(n => n.id === state.story.charging.nodeId);
+  if (!node) { state.story.charging = null; return; }
+  const timeNeed = node.chargeTime * (state.story.extremeMode ? 1.15 : 1);
+  const elapsed = (Date.now() - state.story.charging.startTime) / 1000;
+  state.story.charging.progress = Math.min(100, (elapsed / timeNeed) * 100);
+  if (state.story.charging.progress >= 100) {
+    completeStoryNode(node);
+    state.story.charging = null;
+    void save();
+    renderStory();
+  }
+}
+
+function selectStoryNode(id) {
+  ensureStoryState();
+  state.story.selectedNode = id;
+  renderStory();
+}
+
+function renderStory() {
+  ensureStoryState();
+  const list = document.getElementById("storyList");
+  if (!list) return;
+  const map = state.story.map;
+  const completed = state.story.completed || [];
+  const selectedId = state.story.selectedNode != null ? state.story.selectedNode : state.story.current;
+  const selected = map.find(n => n.id === selectedId) || map[0];
+  const charging = state.story.charging;
+  let bg = "";
+  if (typeof STORY_BACKGROUNDS !== "undefined") {
+    bg = (selected && selected.isFinal && STORY_BACKGROUNDS.ENDING)
+      ? STORY_BACKGROUNDS.ENDING
+      : (selected && STORY_BACKGROUNDS[selected.biome]) || STORY_BACKGROUNDS.TOWN_PLAZA || "";
+  }
+  let html = '<div class="card" style="background-image:url(\'' + bg + '\');background-size:cover;background-position:center;color:#fff;text-shadow:0 0 6px #000">' +
+    "<strong>World Map</strong>" +
+    (state.story.extremeMode ? ' <span class="tag">EXTREME</span>' : "") +
+    (state.story.storyCompleted ? ' <span class="tag">COMPLETE</span>' : "") +
+    '<div class="small">Progress ' + completed.length + "/" + map.length +
+    " · Mana " + Math.floor(state.story.mana) + "/" + state.story.maxMana + "</div></div>";
+
+  if (selected) {
+    const done = completed.includes(selected.id);
+    const isCharging = charging && charging.nodeId === selected.id;
+    const errs = done ? [] : getNodeRequirementErrors(selected);
+    html += '<div class="card" style="background-image:url(\'' + bg + '\');background-size:cover;background-position:center;color:#fff;text-shadow:0 0 6px #000">' +
+      "<strong>" + selected.title + "</strong>" +
+      (done ? ' <span class="tag">DONE</span>' : "") +
+      '<div class="small">' + selected.lore + "</div>" +
+      '<div class="small">Power ' + selected.req.power + " · Gold " + selected.req.money.toLocaleString() +
+      " · Mana " + selected.req.mana + "</div>";
+    if (isCharging) {
+      const pct = Math.floor(charging.progress || 0);
+      html += '<p class="small">Traveling… ' + pct + '%</p><div class="bar"><div class="barFill" style="width:' + pct + '%;background:#00e5ff"></div></div>';
+    } else if (!done && !errs.length) {
+      html += '<button type="button" class="btn" onclick="startCharging(' + selected.id + ')">Travel & Charge</button>';
+    } else if (!done) {
+      html += '<p style="color:#f88" class="small">' + errs.join(" · ") + "</p>";
+    }
+    html += "</div>";
+  }
+  html += '<div class="section">Nodes</div>';
+  map.forEach(node => {
+    const done = completed.includes(node.id);
+    const sel = selectedId === node.id;
+    html += '<div class="card ' + (done ? "equipped " : "") + (sel ? "active-card" : "") +
+      '" style="cursor:pointer" onclick="selectStoryNode(' + node.id + ')">' +
+      "<strong>" + node.title + "</strong> " + (done ? "✓" : "") +
+      '<div class="small">' + node.biome + "</div></div>";
+  });
+  list.innerHTML = html;
+}
+
+window.ensureStoryState = ensureStoryState;
+window.onPrestigeStory = onPrestigeStory;
+window.storyTick = storyTick;
+window.startCharging = startCharging;
+window.selectStoryNode = selectStoryNode;
+window.renderStory = renderStory;
+
+/* ---------- PRESTIGE ---------- */
+const PRESTIGE_UP_TABLE = typeof PRESTIGE_UPGRADES !== "undefined" ? PRESTIGE_UPGRADES : [];
+
+function estimatePP() {
+  const year = state.year || 18;
+  const money = Math.max(1, state.money || 1);
+  const nodes = (state.story?.completed?.length) || 0;
+  const clears = (state.clearedDungeons?.length) || 0;
+  return Math.max(1, Math.floor(year * 2 + Math.log10(money + 1) * 8 + nodes * 0.5 + clears * 2));
+}
+function canPrestige() {
+  if ((state.year || 18) < 25) return { ok: false, reason: "Reach Year 25 first." };
+  if (!state.story?.storyCompleted) return { ok: false, reason: "Finish the main story first." };
+  if (typeof isTutorialActive === "function" && isTutorialActive()) return { ok: false, reason: "Complete the tutorial first." };
+  return { ok: true, reason: "" };
+}
+function ensurePrestigeState() {
+  state.prestigeUpgrades = state.prestigeUpgrades || { pTap: 0, pIncome: 0, pStart: 0, pKibble: 0, pMoney: 0, pRes: 0, pIntim: 0 };
+  if (!Array.isArray(state.unlockedHeroes)) state.unlockedHeroes = [0];
+  if (!state.unlockedHeroes.includes(0)) state.unlockedHeroes.unshift(0);
+}
+function unlockNextHero() {
+  if (typeof HEROES === "undefined") return null;
+  const hero = HEROES.find(h => h.unlock && h.unlock.prestige === state.prestige);
+  if (hero && !state.unlockedHeroes.includes(hero.id)) {
+    state.unlockedHeroes.push(hero.id);
+    return hero;
+  }
+  return null;
+}
+function applyPrestigeSoftReset() {
+  const startBonus = (state.prestigeUpgrades?.pStart || 0) * 500;
+  state.money = 500 + startBonus;
+  state.year = 18;
+  state.day = 1;
+  state.life = 100 + (state.prestige || 0) * 15;
+  state.stamina = state.staminaMax || 100;
+  state.kibble = Math.floor((state.kibble || 0) * 0.3);
+  state.activePets = [];
+  state.activeHouse = -1;
+  state.activeMount = null;
+  state.businesses = {};
+  state.guild = { activeJobs: {}, level: 0 };
+  state.houses = {};
+  state.mounts = {};
+  state.inventory = { wood: 5, herb: 3 };
+  state.upgrades = { tapBoost: 0, incomeBoost: 0, kibbleChance: 0, critChance: 0, practiceDummy: 0, trainingApparatus: 0 };
+  state.clearedDungeons = [];
+  state.dungeonProgress = {};
+  state.dungeonTier = {};
+  state.activeDungeon = null;
+  state.battleLog = [];
+  state.storyProgress = 0;
+  state.tempIncomeMult = 1;
+  state.tempIncomeEnd = 0;
+  state.tempTapMult = 1;
+  state.tempTapEnd = 0;
+  if (typeof resetArmourKeepStarter === "function") resetArmourKeepStarter();
+  if (typeof resetCompanionProgressKeepUnlocked === "function") resetCompanionProgressKeepUnlocked();
+  if (typeof resetTameProgressKeepUnlocked === "function") resetTameProgressKeepUnlocked();
+  state.hero = 0;
+}
+
+function doPrestige() {
+  ensurePrestigeState();
+  const gate = canPrestige();
+  if (!gate.ok) {
+    if (typeof showModal === "function") showModal("✦ Not Ready ✦", gate.reason);
+    return;
+  }
+  const gain = estimatePP();
+  state.prestige = (state.prestige || 0) + 1;
+  state.prestigePoints = (state.prestigePoints || 0) + gain;
+  unlockNextHero();
+  applyPrestigeSoftReset();
+  onPrestigeStory();
+  state.pendingHeroSelect = true;
+  markEconomyDirty();
+  emitGameEvent("prestige:up", {});
+  void save();
+  if (state.prestige === 1 && state.tutorial) {
+    const idx = TUTORIAL_STEPS.findIndex(s => s.id === "post_prestige_welcome");
+    if (idx >= 0) {
+      state.tutorial.step = idx;
+      state.tutorial.active = true;
+      state.tutorial.completed = false;
+    }
+  }
+  setTimeout(() => {
+    if (typeof playCutscene === "function") {
+      playCutscene("prestige_return", () => {
+        if (typeof isTutorialActive === "function" && isTutorialActive()) runTutorialStep();
+        else if (typeof openHeroSelect === "function") openHeroSelect(true);
+      });
+    } else if (typeof openHeroSelect === "function") openHeroSelect(true);
+  }, 400);
+}
+
+function buyPrestigeUpgrade(id) {
+  ensurePrestigeState();
+  const u = PRESTIGE_UP_TABLE.find(x => x.id === id);
+  if (!u) return;
+  const lvl = state.prestigeUpgrades[u.key] || 0;
+  if (lvl >= u.max) return;
+  const cost = u.cost * (lvl + 1);
+  if ((state.prestigePoints || 0) < cost) return;
+  state.prestigePoints -= cost;
+  state.prestigeUpgrades[u.key] = lvl + 1;
+  markEconomyDirty();
+  void save();
+  renderPrestige();
+}
+
+function renderPrestige() {
+  ensurePrestigeState();
+  const pLevel = document.getElementById("pLevel");
+  const pPoints = document.getElementById("pPoints");
+  const estPP = document.getElementById("estPP");
+  if (pLevel) pLevel.textContent = state.prestige || 0;
+  if (pPoints) pPoints.textContent = state.prestigePoints || 0;
+  if (estPP) estPP.textContent = estimatePP();
+  const list = document.getElementById("prestigeUpList");
+  if (!list) return;
+  const gate = canPrestige();
+  let html = '<div class="card"><strong>Reincarnation</strong>' +
+    '<div class="small">Year ' + Number(state.year || 18).toFixed(1) +
+    " · Story: " + (state.story?.storyCompleted ? "Complete ✓" : "Incomplete") + "</div>" +
+    '<button type="button" class="btn" ' + (gate.ok ? "" : "disabled") + ' onclick="doPrestige()">Reincarnate (+' + estimatePP() + " PP)</button>" +
+    (gate.ok ? "" : '<div class="small" style="color:#f88">' + gate.reason + "</div>") + "</div>" +
+    '<div class="section">Prestige Upgrades</div>';
+  PRESTIGE_UP_TABLE.forEach(u => {
+    const lvl = state.prestigeUpgrades[u.key] || 0;
+    const cost = u.cost * (lvl + 1);
+    html += '<div class="card"><strong>' + u.name + '</strong> <span class="small">Lv ' + lvl + "/" + u.max + "</span>" +
+      '<div class="small">' + u.desc + "</div>" +
+      '<button type="button" class="btn" onclick="buyPrestigeUpgrade(\'' + u.id + '\')" ' +
+      (lvl >= u.max || (state.prestigePoints || 0) < cost ? "disabled" : "") + ">" +
+      (lvl >= u.max ? "Maxed" : cost + " PP") + "</button></div>";
+  });
+  list.innerHTML = html;
+}
+
+window.doPrestige = doPrestige;
+window.buyPrestigeUpgrade = buyPrestigeUpgrade;
+window.renderPrestige = renderPrestige;
+window.estimatePP = estimatePP;
+window.canPrestige = canPrestige;
+
+/* ---------- CUTSCENES + TUTORIAL ---------- */
+let currentCutscene = null;
+let cutsceneIndex = 0;
+
+const TUTORIAL_CUTSCENES = {
+  tutorial_welcome: {
+    background: "prestigeReturn",
+    lines: [
+      { speaker: "God", text: "So... another soul has arrived." },
+      { speaker: "God", text: "Welcome to my world, reincarnator." },
+      { speaker: "God", text: "You will die many times. Each death makes you stronger." },
+      { speaker: "God", text: "Let me teach you how to live." }
+    ]
+  },
+  tutorial_story_explain: {
+    background: "prestigeReturn",
+    lines: [
+      { speaker: "God", text: "The World Map is the heart of your journey." },
+      { speaker: "God", text: "Travel node by node. Meet companions. Grow powerful." },
+      { speaker: "God", text: "Only the final node opens Prestige." }
+    ]
+  },
+  tutorial_complete: {
+    background: "prestigeReturn",
+    lines: [
+      { speaker: "God", text: "That is enough guidance for now." },
+      { speaker: "God", text: "After you reincarnate, a merchant of the dead will appear." },
+      { speaker: "God", text: "Go, reincarnator." }
+    ]
+  },
+  tutorial_post_prestige: {
+    background: "prestigeReturn",
+    lines: [
+      { speaker: "God", text: "You have returned once more." },
+      { speaker: "God", text: "Seek the Slave Merchant in the Store." }
+    ]
+  }
+};
+
+const CUTSCENES = {
+  prestige_return: {
+    background: "prestigeReturn",
+    lines: [
+      { speaker: "Narrator", text: "Soft morning light filters through the window." },
+      { speaker: "Lyra", text: "You're awake..." },
+      { speaker: "Lyra", text: "Welcome back. The world is waiting." }
+    ]
+  },
+  slave_merchant_intro: {
+    background: "slaveMerchantScene",
+    portrait: "slaveMerchantPortrait",
+    lines: [
+      { speaker: "Narrator", text: "An old woman under a deep hood looks up." },
+      { speaker: "Merchant", text: "I deal only with those who have died and returned." },
+      { speaker: "Merchant", text: "What do you seek?" }
+    ]
+  }
+};
+
+function playCutscene(cutsceneId, onFinish) {
+  const cs = CUTSCENES[cutsceneId] || TUTORIAL_CUTSCENES[cutsceneId];
+  if (!cs) { if (onFinish) onFinish(); return; }
+  currentCutscene = cs;
+  cutsceneIndex = 0;
+  let overlay = document.getElementById("cutsceneOverlay");
+  if (!overlay) {
+    overlay = document.createElement("div");
+    overlay.id = "cutsceneOverlay";
+    overlay.style.cssText = "position:fixed;inset:0;z-index:10000;background:#000;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;";
+    document.body.appendChild(overlay);
+  }
+  const bgUrl = (typeof CUTSCENE_BACKGROUNDS !== "undefined" && CUTSCENE_BACKGROUNDS[cs.background]) ||
+    (typeof PRESTIGE_IMAGES !== "undefined" && PRESTIGE_IMAGES[cs.background]) || "";
+  overlay.innerHTML =
+    '<div style="position:absolute;inset:0;background-image:url(\'' + bgUrl + '\');background-size:cover;background-position:center;filter:brightness(0.7)"></div>' +
+    '<div id="cutscenePortrait" style="position:absolute;bottom:180px;left:40px;width:140px;height:200px;display:none"></div>' +
+    '<div style="position:relative;width:100%;max-width:820px;background:rgba(10,10,25,0.93);border-top:3px solid #c77dff;padding:20px 24px;color:#eee">' +
+    '<div id="cutsceneSpeaker" style="color:#c77dff;font-weight:700;margin-bottom:6px"></div>' +
+    '<div id="cutsceneText" style="line-height:1.55;min-height:60px"></div>' +
+    '<button type="button" class="btn" style="margin-top:14px" onclick="nextCutsceneLine()">Continue</button></div>';
+  window._cutsceneOnFinish = onFinish || null;
+  showCutsceneLine();
+}
+function showCutsceneLine() {
+  if (!currentCutscene) return;
+  const line = currentCutscene.lines[cutsceneIndex];
+  if (!line) { endCutscene(); return; }
+  document.getElementById("cutsceneSpeaker").textContent = line.speaker === "Hero" ? "You" : line.speaker;
+  document.getElementById("cutsceneText").textContent = line.text;
+  const portraitEl = document.getElementById("cutscenePortrait");
+  if (line.speaker === "Merchant" || currentCutscene.portrait === "slaveMerchantPortrait") {
+    portraitEl.style.display = "block";
+    portraitEl.innerHTML = '<img src="' + (PRESTIGE_IMAGES?.slaveMerchantPortrait || "") +
+      '" style="width:100%;height:100%;object-fit:cover;border-radius:12px;border:2px solid #c77dff"/>';
+  } else portraitEl.style.display = "none";
+}
+function nextCutsceneLine() {
+  cutsceneIndex++;
+  if (!currentCutscene || cutsceneIndex >= currentCutscene.lines.length) endCutscene();
+  else showCutsceneLine();
+}
+function endCutscene() {
+  document.getElementById("cutsceneOverlay")?.remove();
+  currentCutscene = null;
+  if (typeof window._cutsceneOnFinish === "function") window._cutsceneOnFinish();
+  window._cutsceneOnFinish = null;
+}
+
+const TUTORIAL_STEPS = [
+  { id: "welcome", type: "cutscene", cutsceneId: "tutorial_welcome" },
+  { id: "tap_gold", type: "highlight", target: "#tapBtn", message: "Tap to earn gold.", requireAction: "tap" },
+  { id: "open_business", type: "highlight", target: "[data-tab='business']", message: "Open the Business tab.", requireAction: "tab:business" },
+  { id: "buy_first_business", type: "highlight", target: "#businessList .btn", message: "Purchase your first business.", requireAction: "buyBusiness" },
+  { id: "open_companions", type: "highlight", target: "[data-tab='companions']", message: "Open Companions.", requireAction: "tab:companions" },
+  { id: "open_tames", type: "highlight", target: "[data-tab='tames']", message: "Open Tames.", requireAction: "tab:tames" },
+  { id: "open_houses", type: "highlight", target: "[data-tab='houses']", message: "Open Houses.", requireAction: "tab:houses" },
+  { id: "open_inventory", type: "highlight", target: "[data-tab='inventory']", message: "This is Inventory.", requireAction: "tab:inventory" },
+  { id: "open_dungeon", type: "highlight", target: "[data-tab='dungeon']", message: "Dungeons hold rare materials.", requireAction: "tab:dungeon" },
+  { id: "open_story", type: "highlight", target: "[data-tab='story']", message: "The World Map is the heart of your journey.", requireAction: "tab:story" },
+  { id: "explain_story", type: "cutscene", cutsceneId: "tutorial_story_explain" },
+  { id: "open_prestige", type: "highlight", target: "[data-tab='prestige']", message: "One day you will reincarnate.", requireAction: "tab:prestige" },
+  { id: "final", type: "cutscene", cutsceneId: "tutorial_complete" },
+  { id: "post_prestige_welcome", type: "cutscene", cutsceneId: "tutorial_post_prestige" },
+  { id: "open_store_merchant", type: "highlight", target: "[data-tab='store']", message: "A new merchant appeared in Store.", requireAction: "tab:store" }
+];
+
+function ensureTutorialState() {
+  if (!state.tutorial) state.tutorial = { active: true, step: 0, completed: false };
+}
+function isTutorialActive() {
+  ensureTutorialState();
+  return state.tutorial.active && !state.tutorial.completed;
+}
+function startTutorial() {
+  ensureTutorialState();
+  if (state.tutorial.completed) return;
+  state.tutorial.active = true;
+  state.tutorial.step = 0;
+  runTutorialStep();
+}
+function runTutorialStep() {
+  ensureTutorialState();
+  clearTutorialHighlight();
+  if (state.tutorial.step >= TUTORIAL_STEPS.length) { completeTutorial(); return; }
+  const step = TUTORIAL_STEPS[state.tutorial.step];
+  if (step.type === "cutscene") playCutscene(step.cutsceneId, () => advanceTutorial());
+  else if (step.type === "highlight") highlightElement(step.target, step.message);
+}
+function advanceTutorial() {
+  state.tutorial.step++;
+  void save();
+  runTutorialStep();
+}
+function completeTutorial() {
+  state.tutorial.active = false;
+  state.tutorial.completed = true;
+  clearTutorialHighlight();
+  if (typeof toast === "function") toast("Tutorial complete.");
+  void save();
+}
+function highlightElement(selector, message) {
+  clearTutorialHighlight();
+  const el = document.querySelector(selector);
+  if (!el) { setTimeout(() => advanceTutorial(), 2000); return; }
+  const rect = el.getBoundingClientRect();
+  const highlight = document.createElement("div");
+  highlight.id = "tutorialHighlight";
+  highlight.style.cssText = "position:absolute;pointer-events:none;z-index:9990;border:3px solid #c77dff;border-radius:12px;box-shadow:0 0 25px #c77dff;left:" +
+    (rect.left + window.scrollX - 6) + "px;top:" + (rect.top + window.scrollY - 6) + "px;width:" + (rect.width + 12) + "px;height:" + (rect.height + 12) + "px";
+  document.body.appendChild(highlight);
+  const msg = document.createElement("div");
+  msg.id = "tutorialMessage";
+  msg.style.cssText = "position:fixed;bottom:110px;left:50%;transform:translateX(-50%);background:rgba(15,10,30,0.95);border:2px solid #c77dff;color:#eee;padding:14px 20px;border-radius:12px;z-index:9991;max-width:90%;text-align:center";
+  msg.innerHTML = "<strong style=\"color:#c77dff\">God</strong><br>" + message;
+  document.body.appendChild(msg);
+}
+function clearTutorialHighlight() {
+  document.getElementById("tutorialHighlight")?.remove();
+  document.getElementById("tutorialMessage")?.remove();
+}
+function onTutorialAction(action) {
+  if (!isTutorialActive()) return;
+  const step = TUTORIAL_STEPS[state.tutorial.step];
+  if (step?.type === "highlight" && step.requireAction === action) advanceTutorial();
+}
+
+window.playCutscene = playCutscene;
+window.nextCutsceneLine = nextCutsceneLine;
+window.startTutorial = startTutorial;
+window.isTutorialActive = isTutorialActive;
+window.onTutorialAction = onTutorialAction;
+window.ensureTutorialState = ensureTutorialState;
+window.runTutorialStep = runTutorialStep;
+
+/* ---------- DAILY LOGIN + CHALLENGES ---------- */
+function processLogin() {
+  const today = new Date().toDateString();
+  if (state.lastLoginDay !== today) {
+    if (state.lastLoginDay) {
+      const last = new Date(state.lastLoginDay).getTime();
+      const diff = (Date.now() - last) / 86400000;
+      state.loginStreak = diff < 2 ? (state.loginStreak || 0) + 1 : 1;
+    } else state.loginStreak = 1;
+    state.lastLoginDay = today;
+    state.loginClaimed = {};
+    rollDailyChallenges();
+    state.soulFragments = (state.soulFragments || 0) + 1;
+    if (typeof toast === "function") toast("Daily login +1 Soul Fragment (streak " + state.loginStreak + ")");
+  } else if (!state.dailyChallengeIds || !state.dailyChallengeIds.length) {
+    rollDailyChallenges();
+  }
+}
+
+function rollDailyChallenges() {
+  const pool = typeof CHALLENGE_POOL !== "undefined" ? CHALLENGE_POOL.filter(c => c.id !== "all") : [];
+  const shuffled = pool.slice().sort(() => Math.random() - 0.5);
+  state.dailyChallengeIds = shuffled.slice(0, 4).map(c => c.id);
+  const all = typeof CHALLENGE_POOL !== "undefined" ? CHALLENGE_POOL.find(c => c.id === "all") : null;
+  if (all) state.dailyChallengeIds.push("all");
+  state.challengeProgress = {};
+  state.claimedChallenges = {};
+  state.challengeDate = new Date().toDateString();
+}
+
+function getChallengeDef(id) {
+  return typeof CHALLENGE_POOL !== "undefined" ? CHALLENGE_POOL.find(c => c.id === id) : null;
+}
+
+function claimChallenge(id) {
+  const def = getChallengeDef(id);
+  if (!def || state.claimedChallenges?.[id]) return;
+  let progress = state.challengeProgress?.[def.key] || 0;
+  if (def.id === "all") {
+    const others = (state.dailyChallengeIds || []).filter(x => x !== "all");
+    progress = others.filter(x => state.claimedChallenges?.[x]).length;
+  }
+  if (progress < def.target) {
+    if (typeof toast === "function") toast("Not complete");
+    return;
+  }
+  state.claimedChallenges[id] = true;
+  state.money = (state.money || 0) + 500 + (state.prestige || 0) * 100;
+  state.kibble = (state.kibble || 0) + 3;
+  if (typeof toast === "function") toast("Challenge claimed: " + def.name);
+  void save();
+  renderChallengeList();
+  if (typeof render === "function") render();
+}
+
+function renderChallengeList() {
+  const el = document.getElementById("challengeList");
+  if (!el) return;
+  const ids = state.dailyChallengeIds || [];
+  if (!ids.length) {
+    el.innerHTML = "";
+    return;
+  }
+  let html = '<div class="section">Daily Challenges</div>';
+  ids.forEach(id => {
+    const def = getChallengeDef(id);
+    if (!def) return;
+    let progress = state.challengeProgress?.[def.key] || 0;
+    if (def.id === "all") {
+      const others = ids.filter(x => x !== "all");
+      progress = others.filter(x => state.claimedChallenges?.[x]).length;
+    }
+    const claimed = !!(state.claimedChallenges && state.claimedChallenges[id]);
+    const done = progress >= def.target;
+    html += '<div class="card"><strong>' + def.name + "</strong>" +
+      '<div class="small">' + def.desc + " · " + Math.min(progress, def.target) + "/" + def.target + "</div>";
+    if (claimed) html += '<button type="button" class="btn" disabled>Claimed</button>';
+    else html += '<button type="button" class="btn" onclick="claimChallenge(\'' + id + '\')" ' + (done ? "" : "disabled") + ">Claim</button>";
+    html += "</div>";
+  });
+  el.innerHTML = html;
+}
+
+function renderLoginArea() {
+  const el = document.getElementById("loginArea");
+  if (!el) return;
+  el.innerHTML = '<div class="card small">Login streak: <b>' + (state.loginStreak || 0) +
+    "</b> · Soul Fragments: <b>" + (state.soulFragments || 0) + "</b></div>";
+}
+
+window.processLogin = processLogin;
+window.claimChallenge = claimChallenge;
+window.renderChallengeList = renderChallengeList;
+window.renderLoginArea = renderLoginArea;
+
+console.log("Module 06 story + prestige + tutorial + challenges ready");
+/* === END MODULE 06 — PASTE MODULE 07 IMMEDIATELY BELOW === */
+/* ========== MODULE 07 — UI + INIT + CLOSE ========== */
+/* PASTE ORDER: last. Ends the script and document. */
+
+const TABS = [
+  "home", "companions", "tames", "mounts", "inventory",
+  "store", "business", "craft", "houses", "prestige", "dungeon", "story", "profile"
+];
+const TAB_LABELS = {
+  home: "Home", companions: "Companions", tames: "Tames", mounts: "Mounts",
+  inventory: "Inventory", store: "Store", business: "Business", craft: "Craft",
+  houses: "Houses", prestige: "Prestige", dungeon: "Dungeon", story: "Story", profile: "Profile"
+};
+
+const UI = {
+  els: {},
+  currentTab: "home",
+  init() {
+    const ids = [
+      "money", "prestige", "year", "life", "kibble", "pp", "souls",
+      "incomeText", "stamina", "mana", "defence",
+      "avatarImg", "avatarIcon", "homeHeroName", "homePower"
+    ];
+    ids.forEach(id => { this.els[id] = document.getElementById(id); });
+
+    if (typeof RESOURCE_ICONS !== "undefined") {
+      const iconMap = {
+        "icon-gold": "gold", "icon-kibble": "kibble", "icon-life": "life",
+        "icon-stamina": "stamina", "icon-mana": "mana", "icon-pp": "prestigePoints"
+      };
+      Object.entries(iconMap).forEach(([elId, key]) => {
+        const el = document.getElementById(elId);
+        if (el && RESOURCE_ICONS[key]) el.src = RESOURCE_ICONS[key];
+      });
+    }
+
+    const nav = document.getElementById("nav");
+    if (nav && !nav.children.length) {
+      TABS.forEach(t => {
+        const b = document.createElement("button");
+        b.type = "button";
+        b.textContent = TAB_LABELS[t] || t;
+        b.dataset.tab = t;
+        if (t === "home") b.classList.add("active");
+        b.onclick = () => showTab(t);
+        nav.appendChild(b);
+      });
+    }
+
+    const avatarBtn = document.getElementById("avatarBtn");
+    if (avatarBtn) avatarBtn.onclick = () => openProfile();
+
+    document.addEventListener("keydown", e => {
+      if (e.key === "Escape") closeModal();
+    });
+
+    this.render();
+  },
+  render() {
+    if (typeof state === "undefined" || !state) return;
+    const set = (id, value) => { if (this.els[id]) this.els[id].textContent = value; };
+    set("money", Math.floor(state.money || 0).toLocaleString());
+    set("prestige", state.prestige || 0);
+    set("pp", state.prestigePoints || 0);
+    set("souls", state.soulFragments || 0);
+    set("year", state.year != null ? Number(state.year).toFixed(1) : "18.0");
+    set("life", Math.floor(state.life || 100));
+    set("stamina", Math.floor(state.stamina || 100));
+    set("mana", Math.floor(state.mana || 0));
+    set("kibble", state.kibble || 0);
+    if (this.els.defence && typeof getDefenceRating === "function") {
+      this.els.defence.textContent = getDefenceRating();
+    }
+    if (this.els.incomeText && typeof getIncome === "function") {
+      this.els.incomeText.textContent = getIncome().toFixed(1);
+    }
+    const hero = typeof getHero === "function" ? getHero() : { name: "Young Adventurer", img: "" };
+    if (this.els.avatarImg && hero.img) this.els.avatarImg.src = hero.img;
+    if (this.els.avatarIcon && hero.img) this.els.avatarIcon.src = hero.img;
+    if (this.els.homeHeroName) this.els.homeHeroName.textContent = hero.name;
+    if (this.els.homePower) {
+      const power = typeof getPlayerPower === "function" ? getPlayerPower() : 0;
+      const defence = typeof getDefenceRating === "function" ? getDefenceRating() : 0;
+      this.els.homePower.textContent = "Power: " + power + "  ·  Defence: " + defence;
+    }
+    if (typeof renderHomeExtras === "function") renderHomeExtras();
+  }
+};
+
+function showTab(name) {
+  UI.currentTab = name;
+  TABS.forEach(t => {
+    const panel = document.getElementById("panel-" + t);
+    if (panel) panel.classList.toggle("active", t === name);
+  });
+  document.querySelectorAll("#nav button").forEach(b => {
+    b.classList.toggle("active", b.dataset.tab === name);
+  });
+  if (name === "companions" && typeof renderCompanions === "function") renderCompanions();
+  if (name === "tames" && typeof renderTames === "function") renderTames();
+  if (name === "mounts" && typeof renderMounts === "function") renderMounts();
+  if (name === "inventory" && typeof renderInventory === "function") renderInventory();
+  if (name === "store" && typeof renderStore === "function") renderStore();
+  if (name === "business" && typeof renderBusiness === "function") renderBusiness();
+  if (name === "craft" && typeof renderCraft === "function") renderCraft();
+  if (name === "houses" && typeof renderHouses === "function") renderHouses();
+  if (name === "prestige" && typeof renderPrestige === "function") renderPrestige();
+  if (name === "dungeon" && typeof renderDungeon === "function") renderDungeon();
+  if (name === "story" && typeof renderStory === "function") renderStory();
+  if (name === "profile" && typeof renderProfile === "function") renderProfile();
+  if (typeof onTutorialAction === "function") onTutorialAction("tab:" + name);
+}
+
+function toast(msg) {
+  let t = document.getElementById("toast");
+  if (!t) {
+    t = document.createElement("div");
+    t.id = "toast";
+    document.body.appendChild(t);
+  }
+  t.textContent = msg;
+  t.classList.add("show");
+  clearTimeout(toast._tm);
+  toast._tm = setTimeout(() => t.classList.remove("show"), 2500);
+}
+
+/** FIXED: HTML strings use innerHTML; plain text uses textContent */
+function showModal(title, content, buttons) {
+  let modal = document.getElementById("gameModal");
+  if (!modal) {
+    modal = document.createElement("div");
+    modal.id = "gameModal";
+    modal.className = "modal";
+    modal.innerHTML =
+      '<div class="modal-box">' +
+      '<button type="button" class="close" onclick="closeModal()">×</button>' +
+      '<h2 id="modalTitle" style="color:#c77dff;margin-bottom:10px"></h2>' +
+      '<div id="modalBody" style="line-height:1.5;margin-bottom:16px"></div>' +
+      '<div id="modalBtns" style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap"></div>' +
+      "</div>";
+    document.body.appendChild(modal);
+  }
+  document.getElementById("modalTitle").textContent = title || "";
+  const body = document.getElementById("modalBody");
+  const str = content == null ? "" : String(content);
+  if (/<[a-z][\s\S]*>/i.test(str)) body.innerHTML = str;
+  else body.textContent = str;
+
+  const box = document.getElementById("modalBtns");
+  box.innerHTML = "";
+  (buttons || [{ text: "OK", action: null }]).forEach(b => {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "btn";
+    btn.textContent = b.text;
+    btn.onclick = () => {
+      closeModal();
+      if (typeof b.action === "function") b.action();
+    };
+    box.appendChild(btn);
+  });
+  modal.classList.add("show");
+}
+
+function closeModal() {
+  if (state && state.pendingHeroSelect) {
+    document.getElementById("profileModal")?.classList.remove("show");
+    document.getElementById("gameModal")?.classList.remove("show");
+    return;
+  }
+  document.getElementById("profileModal")?.classList.remove("show");
+  document.getElementById("gameModal")?.classList.remove("show");
+  document.getElementById("heroModal")?.classList.remove("show");
+}
+
+function getHero() {
+  if (typeof HEROES !== "undefined" && HEROES[state.hero]) return HEROES[state.hero];
+  return {
+    id: 0,
+    name: "Young Adventurer",
+    img: (typeof HERO_IMG !== "undefined" ? HERO_IMG : "") + "Young%20Adventurer.jpg"
+  };
+}
+
+function renderProfile() {
+  const h = getHero();
+  const statsHtml =
+    '<div class="small">Companions: ' + getCompanionCount() + "</div>" +
+    '<div class="small">Tames: ' + getTameCount() + "</div>" +
+    '<div class="small">Mounts: ' + getMountCount() + "</div>" +
+    '<div class="small">Houses: ' + getHouseCount() + "</div>" +
+    '<div class="small">Businesses: ' + getBusinessCount() + "</div>" +
+    '<div class="small">Prestige: ' + (state.prestige || 0) + "</div>" +
+    '<div class="small">Defence: ' + (typeof getDefenceRating === "function" ? getDefenceRating() : 0) + "</div>";
+
+  const av = document.getElementById("profileAvatar");
+  const title = document.getElementById("avatarTitle");
+  const nameInput = document.getElementById("playerNameInput");
+  const accName = document.getElementById("currentAccountName");
+  if (av) av.src = h.img || "";
+  if (title) title.textContent = h.name;
+  if (nameInput) nameInput.value = state.playerName || "Traveler";
+  if (accName) accName.textContent = state.currentAccount || "default";
+  const stats = document.getElementById("profileStats");
+  if (stats) stats.innerHTML = statsHtml;
+
+  const alist = document.getElementById("accountList");
+  if (alist && typeof getAccountList === "function") {
+    alist.innerHTML = getAccountList().map(a =>
+      '<button type="button" class="btn ' + (a === state.currentAccount ? "" : "secondary") +
+      '" style="padding:5px 10px" onclick="switchAccount(\'' + a + '\')">' + a + "</button>"
+    ).join("");
+  }
+
+  const achCount = document.getElementById("achCount");
+  const achList = document.getElementById("achievementList");
+  if (typeof ACHIEVEMENTS !== "undefined") {
+    if (achCount) achCount.textContent = "(" + Object.keys(state.achievements || {}).length + "/" + ACHIEVEMENTS.length + ")";
+    if (achList) {
+      achList.innerHTML = ACHIEVEMENTS.map(a => {
+        const u = !!(state.achievements && state.achievements[a.id]);
+        return '<div style="padding:8px;margin-bottom:6px;background:' + (u ? "#1a3a1a" : "#222") +
+          ';border-radius:8px;opacity:' + (u ? 1 : 0.55) + '"><strong>' + a.name +
+          '</strong><div class="small">' + a.desc + "</div></div>";
+      }).join("");
+    }
+  }
+
+  const panel = document.getElementById("profilePanelContent");
+  if (panel) {
+    panel.innerHTML =
+      '<div class="card flex"><img src="' + (h.img || "") +
+      '" style="width:90px;height:120px;object-fit:cover;border-radius:12px;border:2px solid #c77dff" onerror="this.style.opacity=0.3"/>' +
+      "<div><strong>" + (state.playerName || "Traveler") + '</strong><div class="small">' + h.name +
+      '</div><div class="small">Account: ' + (state.currentAccount || "default") + "</div></div></div>" +
+      '<div class="card">' + statsHtml + "</div>" +
+      '<div class="card"><button type="button" class="btn secondary" onclick="exportSave()">Export</button> ' +
+      '<button type="button" class="btn secondary" onclick="triggerImport()">Import</button> ' +
+      '<button type="button" class="btn" style="background:#a33" onclick="deleteCurrentAccount()">Delete</button></div>';
+  }
+}
+
+function openProfile() {
+  renderProfile();
+  document.getElementById("profileModal")?.classList.add("show");
+}
+
+function createNewAccount() {
+  const input = document.getElementById("newAccountName");
+  const name = (input && input.value.trim()) || "";
+  if (!name) return;
+  if (typeof createAccount === "function" && createAccount(name)) {
+    void switchAccount(name);
+    if (input) input.value = "";
+    openProfile();
+  } else if (typeof toast === "function") toast("Account already exists");
+}
+
+function openHeroSelect(force) {
+  const grid = document.getElementById("heroGrid");
+  const modal = document.getElementById("heroModal");
+  if (!grid || !modal || typeof HEROES === "undefined") return;
+  grid.innerHTML = HEROES.map(h => {
+    const unlocked = (state.unlockedHeroes || [0]).includes(h.id);
+    return '<div class="hero-card ' + (unlocked ? "unlocked" : "locked") +
+      (state.hero === h.id ? " selected" : "") + '" ' +
+      (unlocked ? 'onclick="selectHero(' + h.id + ')"' : "") + ">" +
+      '<img src="' + (h.img || "") + '" alt="' + h.name + '" onerror="this.style.opacity=0.3"/>' +
+      '<div class="small">' + h.name + "</div>" + (unlocked ? "" : "🔒") + "</div>";
+  }).join("");
+  modal.classList.add("show");
+}
+
+function selectHero(id) {
+  if (!(state.unlockedHeroes || []).includes(id)) return;
+  state.hero = id;
+  state.pendingHeroSelect = false;
+  document.getElementById("heroModal")?.classList.remove("show");
+  if (typeof render === "function") render();
+  void save();
+  if (typeof toast === "function") toast("Form chosen: " + (HEROES[id]?.name || id));
+}
+
+function render() {
+  UI.render();
+}
+
+function renderHomeExtras() {
+  const sum = document.getElementById("homeSummary");
+  if (sum) {
+    const power = typeof getPlayerPower === "function" ? getPlayerPower() : 0;
+    const defence = typeof getDefenceRating === "function" ? getDefenceRating() : 0;
+    sum.innerHTML = '<div class="small">Power: <b>' + power + "</b> · Defence: <b>" + defence +
+      "</b><br>Companions: " + getCompanionCount() + " · Tames: " + getTameCount() +
+      " · Houses: " + getHouseCount() + " · Businesses: " + getBusinessCount() + "</div>";
+  }
+  if (typeof renderLoginArea === "function") renderLoginArea();
+  if (typeof renderChallengeList === "function") renderChallengeList();
+}
+
+window.UI = UI;
+window.showTab = showTab;
+window.toast = toast;
+window.showModal = showModal;
+window.closeModal = closeModal;
+window.render = render;
+window.openProfile = openProfile;
+window.renderProfile = renderProfile;
+window.openHeroSelect = openHeroSelect;
+window.selectHero = selectHero;
+window.getHero = getHero;
+window.createNewAccount = createNewAccount;
+window.renderHomeExtras = renderHomeExtras;
+
+/* ---------- INIT ---------- */
+async function initGame() {
+  const loaded = await load();
+  console.log(loaded ? "Encrypted save loaded" : "New game started");
+
+  if (typeof processLogin === "function") processLogin();
+  if (typeof ensureStoryState === "function") ensureStoryState();
+  if (typeof ensureTutorialState === "function") ensureTutorialState();
+  if (typeof markEconomyDirty === "function") markEconomyDirty();
+
+  if (typeof applyOfflineProgress === "function") {
+    const offline = applyOfflineProgress();
+    if (offline && offline.earnings > 0) {
+      showModal(
+        "✦ Welcome Back ✦",
+        "You were away for " + Math.floor(offline.secondsAway / 60) + " minutes.\n" +
+        "Earned " + Math.floor(offline.earnings).toLocaleString() + " gold while offline" +
+        (offline.capped ? " (capped at 12h)" : "") + "!"
+      );
+    }
+  }
+
+  UI.init();
+
+  const tapBtn = document.getElementById("tapBtn");
+  if (tapBtn) {
+    tapBtn.onclick = () => {
+      if (typeof tap === "function") tap();
+      if (typeof onTutorialAction === "function") onTutorialAction("tap");
+      if (typeof render === "function") render();
+    };
+  }
+
+  let lastUI = 0;
+  setInterval(() => {
+    if (typeof tick === "function") tick();
+    if (typeof storyTick === "function") storyTick();
+    const now = Date.now();
+    if (now - lastUI > 200) {
+      if (typeof render === "function") render();
+      if (typeof checkAchievements === "function") checkAchievements();
+      lastUI = now;
+    }
+  }, 250);
+
+  setInterval(() => void save(), 15000);
+
+  if (typeof render === "function") render();
+  if (typeof checkAchievements === "function") checkAchievements();
+
+  if (state.pendingHeroSelect && typeof openHeroSelect === "function") {
+    openHeroSelect(true);
+  }
+
+  if (typeof startTutorial === "function") {
+    if (!state.tutorial?.completed && (state.prestige || 0) === 0 && (state.year || 18) <= 18.5) {
+      setTimeout(() => startTutorial(), 800);
+    }
+  }
+
+  console.log("Isekai Life Tycoon ready");
+}
+
+window.initGame = initGame;
+
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", () => { void initGame(); });
+} else {
+  void initGame();
+}
+
+/* END OF GAME SCRIPT — only one closing script tag below */
+</script>
+</body>
+</html>
